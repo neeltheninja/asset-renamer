@@ -354,7 +354,6 @@ body::after {
   border-color: var(--violet);
 }
 
-/* Shimmer top border */
 .upload-zone::before {
   content: '';
   position: absolute;
@@ -408,7 +407,6 @@ body::after {
 
 .drop-sub strong { color: var(--ivory-dim); font-weight: 500; }
 
-/* Three upload actions */
 .upload-actions {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -452,7 +450,6 @@ body::after {
   font-family: var(--mono);
 }
 
-/* Tip bar */
 .tip-bar {
   padding: 12px 24px;
   background: rgba(0,229,160,0.04);
@@ -1283,7 +1280,7 @@ body::after {
     <div class="footer-brand">
       <span class="footer-company">Dashverse</span>
       <span class="footer-divider"></span>
-      <span class="footer-tool-name">Asset Renamer &amp; Verification Pipeline v2.0</span>
+      <span class="footer-tool-name">Asset Renamer &amp; Verification Pipeline v2.1</span>
     </div>
     <div class="footer-credit">
       <span class="footer-credit-label">Tool created by</span>
@@ -1307,21 +1304,27 @@ const ANGLE_GROUPS = {
     'BackThreeQuarterLeftAngle',
     'BackThreeQuarterRightAngle',
   ],
-  'Side Angles': [
+  'Full Body Side Angles': [
     'SideLeftAngle',
     'SideRightAngle',
   ],
-  'Close-Up & Mid Shots': [
-    'CloseUpFront',
-    'CloseUpBack',
-    'CloseUpThreeQuarterLeft',
-    'CloseUpThreeQuarterRight',
+  'Mid Body Shots': [
     'MidBodyFront',
     'MidBodyBack',
     'MidBodyThreeQuarterLeft',
     'MidBodyThreeQuarterRight',
+    'MidBodySideLeft',
+    'MidBodySideRight',
   ],
-  'Special': [
+  'Close-Up Shots': [
+    'CloseUpFront',
+    'CloseUpBack',
+    'CloseUpThreeQuarterLeft',
+    'CloseUpThreeQuarterRight',
+    'CloseUpSideLeft',
+    'CloseUpSideRight',
+  ],
+  'Custom': [
     '__custom__',
   ],
 };
@@ -1367,21 +1370,27 @@ function parseAngle(filename) {
 
   // ─── Close-up shots ───
   if (isCloseUp) {
-    if (is3Q && isLeft)       { angle = 'CloseUpThreeQuarterLeft';  confidence = 'high'; }
-    else if (is3Q && isRight) { angle = 'CloseUpThreeQuarterRight'; confidence = 'high'; }
-    else if (isBack)          { angle = 'CloseUpBack';              confidence = 'high'; }
-    else if (is3Q)            { angle = 'CloseUpThreeQuarterLeft';  confidence = 'med';  }
-    else                      { angle = 'CloseUpFront';             confidence = 'high'; }
+    if (isSide && isLeft)         { angle = 'CloseUpSideLeft';          confidence = 'high'; }
+    else if (isSide && isRight)   { angle = 'CloseUpSideRight';         confidence = 'high'; }
+    else if (isSide)              { angle = 'CloseUpSideLeft';          confidence = 'med';  }
+    else if (is3Q && isLeft)      { angle = 'CloseUpThreeQuarterLeft';  confidence = 'high'; }
+    else if (is3Q && isRight)     { angle = 'CloseUpThreeQuarterRight'; confidence = 'high'; }
+    else if (isBack)              { angle = 'CloseUpBack';              confidence = 'high'; }
+    else if (is3Q)                { angle = 'CloseUpThreeQuarterLeft';  confidence = 'med';  }
+    else                          { angle = 'CloseUpFront';             confidence = 'high'; }
   }
   // ─── Mid-body shots ───
   else if (isMidBody) {
-    if (is3Q && isLeft)       { angle = 'MidBodyThreeQuarterLeft';  confidence = 'high'; }
-    else if (is3Q && isRight) { angle = 'MidBodyThreeQuarterRight'; confidence = 'high'; }
-    else if (isBack)          { angle = 'MidBodyBack';              confidence = 'high'; }
-    else if (is3Q)            { angle = 'MidBodyThreeQuarterLeft';  confidence = 'med';  }
-    else                      { angle = 'MidBodyFront';             confidence = 'high'; }
+    if (isSide && isLeft)         { angle = 'MidBodySideLeft';          confidence = 'high'; }
+    else if (isSide && isRight)   { angle = 'MidBodySideRight';         confidence = 'high'; }
+    else if (isSide)              { angle = 'MidBodySideLeft';          confidence = 'med';  }
+    else if (is3Q && isLeft)      { angle = 'MidBodyThreeQuarterLeft';  confidence = 'high'; }
+    else if (is3Q && isRight)     { angle = 'MidBodyThreeQuarterRight'; confidence = 'high'; }
+    else if (isBack)              { angle = 'MidBodyBack';              confidence = 'high'; }
+    else if (is3Q)                { angle = 'MidBodyThreeQuarterLeft';  confidence = 'med';  }
+    else                          { angle = 'MidBodyFront';             confidence = 'high'; }
   }
-  // ─── Side profile shots ───
+  // ─── Full-body side profile shots ───
   else if (isSide) {
     if (isLeft)       { angle = 'SideLeftAngle';  confidence = 'high'; }
     else if (isRight) { angle = 'SideRightAngle'; confidence = 'high'; }
