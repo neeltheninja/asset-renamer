@@ -26,6 +26,8 @@
   --coral-dim:  rgba(255,107,71,0.13);
   --mint:       #00e5a0;
   --mint-dim:   rgba(0,229,160,0.1);
+  --amber:      #ffb347;
+  --amber-dim:  rgba(255,179,71,0.12);
   --ivory:      #f0ede6;
   --ivory-dim:  rgba(240,237,230,0.55);
   --muted:      rgba(240,237,230,0.38);
@@ -640,7 +642,7 @@ body::after {
 /* ── IMAGE CARDS ── */
 #imageGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(265px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 18px;
 }
 
@@ -694,6 +696,7 @@ body::after {
 .conf-high { background: var(--mint-dim);   color: var(--mint);   border: 1px solid rgba(0,229,160,0.2); }
 .conf-med  { background: var(--violet-dim); color: var(--violet); border: 1px solid rgba(124,111,255,0.2); }
 .conf-low  { background: var(--coral-dim);  color: var(--coral);  border: 1px solid rgba(255,107,71,0.2); }
+.conf-custom { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,179,71,0.25); }
 
 .card-thumb {
   width: 100%; aspect-ratio: 3/4;
@@ -756,6 +759,59 @@ body::after {
 }
 
 .angle-select option { background: var(--overlay); color: var(--ivory); }
+
+.angle-select optgroup {
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--deep);
+}
+
+/* Custom angle input */
+.custom-angle-wrap {
+  margin-top: 8px;
+  display: none;
+}
+
+.custom-angle-wrap.visible {
+  display: block;
+  animation: fade-in 0.2s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.custom-angle-input {
+  width: 100%;
+  background: var(--deep);
+  border: 1px solid var(--amber);
+  border-radius: 8px;
+  color: var(--ivory);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.custom-angle-input::placeholder {
+  color: var(--ghost);
+  font-style: italic;
+}
+
+.custom-angle-input:focus {
+  border-color: var(--violet);
+  box-shadow: 0 0 0 3px var(--violet-dim);
+}
+
+.custom-hint {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--amber);
+  margin-top: 5px;
+  opacity: 0.7;
+}
 
 .card-out {
   font-family: var(--mono); font-size: 10px;
@@ -927,11 +983,12 @@ body::after {
   .upload-actions .ua-btn:nth-child(n) { border-right: none; }
   .upload-actions .ua-btn:nth-child(odd) { border-right: 1px solid var(--rim); }
   .upload-actions .ua-btn:nth-child(n+3) { border-top: 1px solid var(--rim); }
-  #imageGrid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  #imageGrid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
   .action-inner { flex-direction: column; align-items: stretch; }
   .btn-cta { justify-content: center; }
   .masthead { flex-direction: column; align-items: flex-start; }
 }
+
 /* ── FOOTER ── */
 .site-footer {
   position: relative;
@@ -1065,7 +1122,7 @@ body::after {
 <!-- Toast -->
 <div id="toast" role="status"></div>
 
-<!-- Hidden file inputs — multi-select, Linux safe (no webkitdirectory) -->
+<!-- Hidden file inputs -->
 <input type="file" id="fileInput" multiple accept="image/*"/>
 <input type="file" id="zipInput" accept=".zip,application/zip"/>
 
@@ -1226,30 +1283,51 @@ body::after {
     <div class="footer-brand">
       <span class="footer-company">Dashverse</span>
       <span class="footer-divider"></span>
-      <span class="footer-tool-name">Asset Renamer &amp; Verification Pipeline</span>
+      <span class="footer-tool-name">Asset Renamer &amp; Verification Pipeline v2.0</span>
     </div>
     <div class="footer-credit">
       <span class="footer-credit-label">Tool created by</span>
       <span class="footer-author">Soumya Deepta Sarkar</span>
-      <a class="footer-email" href="/cdn-cgi/l/email-protection#80f3eff5edf9e1aee4e5e5f0f4e1aef3e1f2ebe1f2c0e4e1f3e8f6e5f2f3e5aee1e9"><span class="__cf_email__" data-cfemail="9ae9f5eff7e3fbb4feffffeaeefbb4e9fbe8f1fbe8dafefbe9f2ecffe8e9ffb4fbf3">[email&#160;protected]</span></a>
     </div>
   </div>
 </footer>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 'use strict';
 
 // ════════════════════════════════════════════
-//  CONSTANTS
+//  CONSTANTS — EXPANDED ANGLE OPTIONS
 // ════════════════════════════════════════════
-const ANGLES = [
-  'FrontAngle',
-  'BackAngle',
-  'FrontThreeQuarterLeftAngle',
-  'FrontThreeQuarterRightAngle',
-  'BackThreeQuarterLeftAngle',
-  'BackThreeQuarteraRightAngle',
-];
+const ANGLE_GROUPS = {
+  'Full Body Angles': [
+    'FrontAngle',
+    'BackAngle',
+    'FrontThreeQuarterLeftAngle',
+    'FrontThreeQuarterRightAngle',
+    'BackThreeQuarterLeftAngle',
+    'BackThreeQuarterRightAngle',
+  ],
+  'Side Angles': [
+    'SideLeftAngle',
+    'SideRightAngle',
+  ],
+  'Close-Up & Mid Shots': [
+    'CloseUpFront',
+    'CloseUpBack',
+    'CloseUpThreeQuarterLeft',
+    'CloseUpThreeQuarterRight',
+    'MidBodyFront',
+    'MidBodyBack',
+    'MidBodyThreeQuarterLeft',
+    'MidBodyThreeQuarterRight',
+  ],
+  'Special': [
+    '__custom__',
+  ],
+};
+
+// Flat list for validation
+const ALL_ANGLES = Object.values(ANGLE_GROUPS).flat();
 
 const IMAGE_TYPES = new Set([
   'image/png','image/jpeg','image/jpg','image/webp',
@@ -1262,37 +1340,66 @@ const IMAGE_TYPES = new Set([
 let images = [];
 
 // ════════════════════════════════════════════
-//  INTELLIGENT ANGLE PARSER
+//  INTELLIGENT ANGLE PARSER — EXPANDED
 // ════════════════════════════════════════════
 function parseAngle(filename) {
   const n = filename.toLowerCase()
     .replace(/\.[^.]+$/, '')
     .replace(/[-_.]+/g, ' ')
-    .replace(/\b(iteration|iter|v\d*|ver|version|pass|render|shot|view|turn|turnaround|rig|char|character|body|full|fullbody|angle)\b/g, ' ')
+    .replace(/\b(iteration|iter|v\d*|ver|version|pass|render|shot|view|turn|turnaround|rig|char|character|body|angle)\b/g, ' ')
     .replace(/\s+/g, ' ').trim();
 
   const has = (...words) => words.some(w => n.includes(w));
 
-  const isBack  = has('back','rear','posterior','bk');
-  const isFront = has('front','forward','anterior','fwd','fr');
-  const is3Q    = has('quarter','3q','3/4','diagonal','oblique','angled','qtr','three');
-  const isLeft  = has('left','lft');
-  const isRight = has('right','rgt');
+  // Shot type detection
+  const isCloseUp = has('close', 'closeup', 'close-up', 'headshot', 'portrait', 'face', 'head', 'bust', 'shoulder');
+  const isMidBody = has('mid', 'midbody', 'mid-body', 'torso', 'waist', 'upper', 'upperbody', 'half');
+  const isSide    = has('side', 'profile', 'lateral', 'silhouette');
+
+  // Direction detection
+  const isBack  = has('back', 'rear', 'posterior', 'bk', 'behind');
+  const isFront = has('front', 'forward', 'anterior', 'fwd', 'fr', 'face');
+  const is3Q    = has('quarter', '3q', '3/4', 'diagonal', 'oblique', 'angled', 'qtr', 'three');
+  const isLeft  = has('left', 'lft', 'l ');
+  const isRight = has('right', 'rgt', 'r ');
 
   let angle, confidence;
 
-  if      (isBack && is3Q && isLeft)   { angle='BackThreeQuarterLeftAngle';   confidence='high'; }
-  else if (isBack && is3Q && isRight)  { angle='BackThreeQuarterRightAngle';  confidence='high'; }
-  else if (isFront && is3Q && isLeft)  { angle='FrontThreeQuarterLeftAngle';  confidence='high'; }
-  else if (isFront && is3Q && isRight) { angle='FrontThreeQuarterRightAngle'; confidence='high'; }
-  else if (isBack && is3Q)             { angle='BackThreeQuarterLeftAngle';   confidence='med';  }
-  else if (isFront && is3Q)            { angle='FrontThreeQuarterLeftAngle';  confidence='med';  }
-  else if (is3Q && isLeft)             { angle='FrontThreeQuarterLeftAngle';  confidence='med';  }
-  else if (is3Q && isRight)            { angle='FrontThreeQuarterRightAngle'; confidence='med';  }
-  else if (isBack)                     { angle='BackAngle';                   confidence='high'; }
-  else if (isFront)                    { angle='FrontAngle';                  confidence='high'; }
-  else if (is3Q)                       { angle='FrontThreeQuarterLeftAngle';  confidence='low';  }
-  else                                 { angle='FrontAngle';                  confidence='low';  }
+  // ─── Close-up shots ───
+  if (isCloseUp) {
+    if (is3Q && isLeft)       { angle = 'CloseUpThreeQuarterLeft';  confidence = 'high'; }
+    else if (is3Q && isRight) { angle = 'CloseUpThreeQuarterRight'; confidence = 'high'; }
+    else if (isBack)          { angle = 'CloseUpBack';              confidence = 'high'; }
+    else if (is3Q)            { angle = 'CloseUpThreeQuarterLeft';  confidence = 'med';  }
+    else                      { angle = 'CloseUpFront';             confidence = 'high'; }
+  }
+  // ─── Mid-body shots ───
+  else if (isMidBody) {
+    if (is3Q && isLeft)       { angle = 'MidBodyThreeQuarterLeft';  confidence = 'high'; }
+    else if (is3Q && isRight) { angle = 'MidBodyThreeQuarterRight'; confidence = 'high'; }
+    else if (isBack)          { angle = 'MidBodyBack';              confidence = 'high'; }
+    else if (is3Q)            { angle = 'MidBodyThreeQuarterLeft';  confidence = 'med';  }
+    else                      { angle = 'MidBodyFront';             confidence = 'high'; }
+  }
+  // ─── Side profile shots ───
+  else if (isSide) {
+    if (isLeft)       { angle = 'SideLeftAngle';  confidence = 'high'; }
+    else if (isRight) { angle = 'SideRightAngle'; confidence = 'high'; }
+    else              { angle = 'SideLeftAngle';  confidence = 'med';  }
+  }
+  // ─── Full-body angles (original logic) ───
+  else if (isBack && is3Q && isLeft)   { angle = 'BackThreeQuarterLeftAngle';   confidence = 'high'; }
+  else if (isBack && is3Q && isRight)  { angle = 'BackThreeQuarterRightAngle';  confidence = 'high'; }
+  else if (isFront && is3Q && isLeft)  { angle = 'FrontThreeQuarterLeftAngle';  confidence = 'high'; }
+  else if (isFront && is3Q && isRight) { angle = 'FrontThreeQuarterRightAngle'; confidence = 'high'; }
+  else if (isBack && is3Q)             { angle = 'BackThreeQuarterLeftAngle';   confidence = 'med';  }
+  else if (isFront && is3Q)            { angle = 'FrontThreeQuarterLeftAngle';  confidence = 'med';  }
+  else if (is3Q && isLeft)             { angle = 'FrontThreeQuarterLeftAngle';  confidence = 'med';  }
+  else if (is3Q && isRight)            { angle = 'FrontThreeQuarterRightAngle'; confidence = 'med';  }
+  else if (isBack)                     { angle = 'BackAngle';                   confidence = 'high'; }
+  else if (isFront)                    { angle = 'FrontAngle';                  confidence = 'high'; }
+  else if (is3Q)                       { angle = 'FrontThreeQuarterLeftAngle';  confidence = 'low';  }
+  else                                 { angle = 'FrontAngle';                  confidence = 'low';  }
 
   return { angle, confidence };
 }
@@ -1300,12 +1407,23 @@ function parseAngle(filename) {
 // ════════════════════════════════════════════
 //  PREVIEW
 // ════════════════════════════════════════════
-const charInput   = document.getElementById('charName');
-const dressInput  = document.getElementById('dressNum');
+const charInput  = document.getElementById('charName');
+const dressInput = document.getElementById('dressNum');
 
 function getChar()  { return charInput.value.trim()  || 'Character'; }
 function getDress() { return dressInput.value.trim() || 'D0'; }
-function buildOutputName(angle) { return `${getChar()}_${getDress()}_FullBodyShot_${angle}.png`; }
+
+function getEffectiveAngle(img) {
+  if (img.guessedAngle === '__custom__') {
+    return img.customAngle || 'CustomAngle';
+  }
+  return img.guessedAngle;
+}
+
+function buildOutputName(img) {
+  const angle = getEffectiveAngle(img);
+  return `${getChar()}_${getDress()}_FullBodyShot_${angle}.png`;
+}
 
 function updatePreview() {
   const c = charInput.value.trim()  || '[CharacterName]';
@@ -1319,16 +1437,6 @@ dressInput.addEventListener('input', updatePreview);
 
 // ════════════════════════════════════════════
 //  UPLOAD ENGINE
-//  ─────────────────────────────────────────
-//  Uses e.dataTransfer.files for drag/drop.
-//  This is the only reliable cross-platform
-//  approach. webkitdirectory is NOT used here
-//  because it is greyed-out on many Linux DEs.
-//
-//  For folders: user drags a folder from their
-//  file manager directly onto the browser window.
-//  This correctly populates e.dataTransfer.files
-//  with all files inside the folder on ALL OSes.
 // ════════════════════════════════════════════
 
 // File picker input
@@ -1374,7 +1482,6 @@ function hidePDO() {
   dropZoneEl.classList.remove('drag-active');
 }
 
-// Attach to window — avoids child-element dragenter/dragleave false fires
 window.addEventListener('dragenter', e => {
   e.preventDefault();
   showPDO(e.dataTransfer?.items?.length || 0);
@@ -1386,7 +1493,6 @@ window.addEventListener('dragover', e => {
   if (!_vis) showPDO(0);
 }, false);
 
-// relatedTarget is null only when truly leaving the viewport
 window.addEventListener('dragleave', e => {
   if (e.relatedTarget === null) hidePDO();
 }, false);
@@ -1397,16 +1503,11 @@ window.addEventListener('drop', e => {
   const files = Array.from(e.dataTransfer?.files || []);
   if (!files.length) return;
 
-  // Check if any dropped file is a ZIP
   const zips = files.filter(f => f.name.toLowerCase().endsWith('.zip') || f.type === 'application/zip');
   const nonZips = files.filter(f => !f.name.toLowerCase().endsWith('.zip') && f.type !== 'application/zip');
 
-  if (zips.length) {
-    zips.forEach(z => ingestZip(z));
-  }
-  if (nonZips.length) {
-    ingestFiles(nonZips);
-  }
+  if (zips.length) zips.forEach(z => ingestZip(z));
+  if (nonZips.length) ingestFiles(nonZips);
 }, false);
 
 // ── Core ingest ─────────────────────────────
@@ -1421,7 +1522,6 @@ function ingestFiles(rawFiles) {
     return;
   }
 
-  // Deduplicate against current batch
   const seen = new Set(images.filter(Boolean).map(i => `${i.originalName}:::${i.file.size}`));
   const fresh = imgs.filter(f => {
     const k = `${f.name}:::${f.size}`;
@@ -1440,7 +1540,14 @@ function ingestFiles(rawFiles) {
   fresh.forEach(file => {
     const objectURL = URL.createObjectURL(file);
     const { angle, confidence } = parseAngle(file.name);
-    images.push({ file, objectURL, originalName: file.name, guessedAngle: angle, confidence });
+    images.push({
+      file,
+      objectURL,
+      originalName: file.name,
+      guessedAngle: angle,
+      customAngle: '',
+      confidence
+    });
     frag.appendChild(buildCard(images.length - 1));
   });
 
@@ -1458,7 +1565,7 @@ function ingestFiles(rawFiles) {
 }
 
 // ════════════════════════════════════════════
-//  CARD BUILDER
+//  CARD BUILDER — WITH CUSTOM ANGLE INPUT
 // ════════════════════════════════════════════
 function buildCard(index) {
   const img  = images[index];
@@ -1467,17 +1574,28 @@ function buildCard(index) {
   card.dataset.index = index;
   card.style.animationDelay = `${(index % 20) * 0.04}s`;
 
-  const confLabel = { high:'HIGH CONF', med:'MED CONF', low:'GUESSED' };
-  const confClass = { high:'conf-high',  med:'conf-med',  low:'conf-low'  };
+  const confLabel = { high:'HIGH CONF', med:'MED CONF', low:'GUESSED', custom:'CUSTOM' };
+  const confClass = { high:'conf-high',  med:'conf-med',  low:'conf-low', custom:'conf-custom' };
 
-  const opts = ANGLES.map(a =>
-    `<option value="${a}"${a===img.guessedAngle?' selected':''}>${a}</option>`
-  ).join('');
+  const isCustom = img.guessedAngle === '__custom__';
+  const currentConf = isCustom ? 'custom' : img.confidence;
+
+  // Build optgroups for the select
+  let optsHtml = '';
+  for (const [groupName, angles] of Object.entries(ANGLE_GROUPS)) {
+    optsHtml += `<optgroup label="${groupName}">`;
+    for (const a of angles) {
+      const displayName = a === '__custom__' ? '✎ Custom (enter below)' : a;
+      const selected = a === img.guessedAngle ? ' selected' : '';
+      optsHtml += `<option value="${a}"${selected}>${displayName}</option>`;
+    }
+    optsHtml += '</optgroup>';
+  }
 
   card.innerHTML = `
     <div class="card-chrome">
       <span class="card-idx">#${String(index+1).padStart(2,'0')}</span>
-      <span class="conf-tag ${confClass[img.confidence]}">${confLabel[img.confidence]}</span>
+      <span class="conf-tag ${confClass[currentConf]}" id="confTag_${index}">${confLabel[currentConf]}</span>
       <div class="card-chrome-actions">
         <button class="card-dl" title="Download this image" onclick="downloadSingle(${index})">⬇</button>
         <button class="card-del" title="Remove" onclick="removeCard(${index})">✕</button>
@@ -1490,9 +1608,21 @@ function buildCard(index) {
       <div class="card-fname" title="${img.originalName}">${img.originalName}</div>
       <div>
         <div class="angle-lbl">Standardized Angle</div>
-        <select class="angle-select" onchange="onAngleChange(${index},this.value)">${opts}</select>
+        <select class="angle-select" id="angleSelect_${index}" onchange="onAngleChange(${index},this.value)">${optsHtml}</select>
+        <div class="custom-angle-wrap ${isCustom ? 'visible' : ''}" id="customWrap_${index}">
+          <input 
+            type="text" 
+            class="custom-angle-input" 
+            id="customInput_${index}"
+            placeholder="Enter custom angle name (e.g. TopDownView)"
+            value="${img.customAngle || ''}"
+            oninput="onCustomAngleInput(${index}, this.value)"
+            spellcheck="false"
+          />
+          <div class="custom-hint">Use PascalCase, no spaces. Will appear in filename.</div>
+        </div>
       </div>
-      <div class="card-out" id="cardOutput_${index}">${buildOutputName(img.guessedAngle)}</div>
+      <div class="card-out" id="cardOutput_${index}">${buildOutputName(img)}</div>
     </div>
   `;
 
@@ -1501,6 +1631,44 @@ function buildCard(index) {
 
 function onAngleChange(i, v) {
   images[i].guessedAngle = v;
+  
+  // Show/hide custom input
+  const customWrap = document.getElementById(`customWrap_${i}`);
+  const confTag = document.getElementById(`confTag_${i}`);
+  
+  if (v === '__custom__') {
+    customWrap.classList.add('visible');
+    confTag.className = 'conf-tag conf-custom';
+    confTag.textContent = 'CUSTOM';
+    // Focus the input
+    setTimeout(() => {
+      document.getElementById(`customInput_${i}`)?.focus();
+    }, 50);
+  } else {
+    customWrap.classList.remove('visible');
+    // Restore original confidence
+    const confLabel = { high:'HIGH CONF', med:'MED CONF', low:'GUESSED' };
+    const confClass = { high:'conf-high',  med:'conf-med',  low:'conf-low' };
+    confTag.className = `conf-tag ${confClass[images[i].confidence]}`;
+    confTag.textContent = confLabel[images[i].confidence];
+  }
+  
+  updateCardOutput(i);
+  checkConflicts();
+  updateExportSummary();
+}
+
+function onCustomAngleInput(i, value) {
+  // Sanitize: PascalCase, no spaces or special chars
+  const sanitized = value.replace(/[^a-zA-Z0-9]/g, '');
+  images[i].customAngle = sanitized;
+  
+  // Update input if sanitization changed value
+  const input = document.getElementById(`customInput_${i}`);
+  if (input && input.value !== sanitized) {
+    input.value = sanitized;
+  }
+  
   updateCardOutput(i);
   checkConflicts();
   updateExportSummary();
@@ -1508,7 +1676,7 @@ function onAngleChange(i, v) {
 
 function updateCardOutput(i) {
   const el = document.getElementById(`cardOutput_${i}`);
-  if (el && images[i]) el.textContent = buildOutputName(images[i].guessedAngle);
+  if (el && images[i]) el.textContent = buildOutputName(images[i]);
 }
 
 function removeCard(index) {
@@ -1531,28 +1699,44 @@ function rebuildGrid() {
 }
 
 // ════════════════════════════════════════════
-//  CONFLICT DETECTION
+//  CONFLICT DETECTION — UPDATED FOR CUSTOM
 // ════════════════════════════════════════════
 function checkConflicts() {
   const counts = {};
-  images.filter(Boolean).forEach(img => { counts[img.guessedAngle] = (counts[img.guessedAngle]||0)+1; });
-  const dupes = new Set(Object.entries(counts).filter(([,v])=>v>1).map(([k])=>k));
+  let hasEmptyCustom = false;
+  
+  images.filter(Boolean).forEach(img => {
+    const effectiveAngle = getEffectiveAngle(img);
+    if (img.guessedAngle === '__custom__' && !img.customAngle) {
+      hasEmptyCustom = true;
+    }
+    counts[effectiveAngle] = (counts[effectiveAngle] || 0) + 1;
+  });
+  
+  const dupes = new Set(Object.entries(counts).filter(([,v]) => v > 1).map(([k]) => k));
   let n = 0;
 
   document.querySelectorAll('.img-card').forEach(card => {
     const img = images[+card.dataset.index];
     if (!img) return;
-    if (dupes.has(img.guessedAngle)) { card.classList.add('conflict'); n++; }
+    const effectiveAngle = getEffectiveAngle(img);
+    if (dupes.has(effectiveAngle)) { card.classList.add('conflict'); n++; }
     else card.classList.remove('conflict');
   });
 
   const badge = document.getElementById('conflictBadge');
   const btn   = document.getElementById('generateBtn');
 
-  if (n > 0) {
+  if (n > 0 || hasEmptyCustom) {
     badge.classList.add('visible');
-    document.getElementById('conflictText').textContent =
-      `${dupes.size} duplicate angle${dupes.size>1?'s':''} — resolve before export`;
+    if (hasEmptyCustom && n === 0) {
+      document.getElementById('conflictText').textContent = 'Empty custom angle — enter a name';
+    } else if (hasEmptyCustom) {
+      document.getElementById('conflictText').textContent = `${dupes.size} duplicate${dupes.size>1?'s':''} + empty custom angles`;
+    } else {
+      document.getElementById('conflictText').textContent =
+        `${dupes.size} duplicate angle${dupes.size>1?'s':''} — resolve before export`;
+    }
     btn.disabled = true;
   } else {
     badge.classList.remove('visible');
@@ -1592,7 +1776,7 @@ function clearAll() {
 }
 
 // ════════════════════════════════════════════
-//  ZIP EXPORT
+//  ZIP EXPORT — UPDATED FOR CUSTOM ANGLES
 // ════════════════════════════════════════════
 async function generateZip() {
   const valid = images.filter(Boolean);
@@ -1603,8 +1787,19 @@ async function generateZip() {
   if (!char)  { showToast('⚠ Enter Character Name first', 'error'); charInput.focus();  return; }
   if (!dress) { showToast('⚠ Enter Dress Number first',   'error'); dressInput.focus(); return; }
 
+  // Check for empty custom angles
+  const hasEmptyCustom = valid.some(img => img.guessedAngle === '__custom__' && !img.customAngle);
+  if (hasEmptyCustom) {
+    showToast('⚠ Fill in all custom angle names first', 'error');
+    return;
+  }
+
+  // Check for duplicates
   const counts = {};
-  valid.forEach(img => { counts[img.guessedAngle] = (counts[img.guessedAngle]||0)+1; });
+  valid.forEach(img => {
+    const angle = getEffectiveAngle(img);
+    counts[angle] = (counts[angle] || 0) + 1;
+  });
   if (Object.values(counts).some(v => v > 1)) {
     showToast('⚠ Resolve duplicate angles first', 'error'); return;
   }
@@ -1625,7 +1820,7 @@ async function generateZip() {
       sub.textContent = `Reading ${img.originalName}…`;
       bar.style.width = `${(i / valid.length) * 72}%`;
       const res = await fetch(img.objectURL);
-      folder.file(buildOutputName(img.guessedAngle), await res.arrayBuffer());
+      folder.file(buildOutputName(img), await res.arrayBuffer());
     }
 
     sub.textContent = 'Compressing…'; bar.style.width = '80%';
@@ -1668,7 +1863,13 @@ function downloadSingle(index) {
   if (!char)  { showToast('⚠ Enter Character Name first', 'error'); charInput.focus();  return; }
   if (!dress) { showToast('⚠ Enter Dress Number first',   'error'); dressInput.focus(); return; }
 
-  const outputName = buildOutputName(img.guessedAngle);
+  if (img.guessedAngle === '__custom__' && !img.customAngle) {
+    showToast('⚠ Enter a custom angle name first', 'error');
+    document.getElementById(`customInput_${index}`)?.focus();
+    return;
+  }
+
+  const outputName = buildOutputName(img);
   const a = document.createElement('a');
   a.href = img.objectURL;
   a.download = outputName;
