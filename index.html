@@ -3,1979 +3,995 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Asset Renamer & Verification Pipeline</title>
+<title>Character Asset Pipeline Suite</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 :root {
-  --void:       #05050e;
-  --deep:       #09091a;
-  --surface:    #0e0e24;
-  --raised:     #13132e;
-  --overlay:    #181838;
-  --rim:        rgba(120,100,255,0.18);
-  --rim-bright: rgba(120,100,255,0.45);
-  --violet:     #7c6fff;
-  --violet-dim: rgba(124,111,255,0.14);
-  --violet-glow:rgba(124,111,255,0.35);
-  --coral:      #ff6b47;
-  --coral-dim:  rgba(255,107,71,0.13);
-  --mint:       #00e5a0;
-  --mint-dim:   rgba(0,229,160,0.1);
-  --amber:      #ffb347;
-  --amber-dim:  rgba(255,179,71,0.12);
-  --ivory:      #f0ede6;
-  --ivory-dim:  rgba(240,237,230,0.55);
-  --muted:      rgba(240,237,230,0.38);
-  --ghost:      rgba(240,237,230,0.18);
+  --void:       #06060f;
+  --deep:       #0a0a1c;
+  --surface:    #101028;
+  --raised:     #161636;
+  --overlay:    #1c1c42;
+  --rim:        rgba(130,110,255,.2);
+  --rim-bright: rgba(130,110,255,.5);
+  --violet:     #8b7aff;
+  --violet-dim: rgba(139,122,255,.12);
+  --violet-glow:rgba(139,122,255,.4);
+  --coral:      #ff7b5c;
+  --coral-dim:  rgba(255,123,92,.12);
+  --mint:       #2eedb5;
+  --mint-dim:   rgba(46,237,181,.1);
+  --amber:      #ffbe5c;
+  --amber-dim:  rgba(255,190,92,.1);
+  --ivory:      #f4f1ea;
+  --ivory-dim:  rgba(244,241,234,.72);
+  --muted:      rgba(244,241,234,.52);
+  --ghost:      rgba(244,241,234,.22);
+  --card-shadow:0 12px 48px rgba(0,0,0,.6), 0 0 0 1px rgba(139,122,255,.08);
+  --text-primary:   #f4f1ea;
+  --text-secondary: rgba(244,241,234,.68);
+  --text-tertiary:  rgba(244,241,234,.42);
+  --text-accent:    #a99aff;
+  --input-bg:       #0d0d20;
+  --input-border:   rgba(130,110,255,.24);
+  --input-focus:    rgba(139,122,255,.55);
   --serif:      'Fraunces', Georgia, serif;
   --sans:       'Inter', system-ui, sans-serif;
   --mono:       'JetBrains Mono', monospace;
-  --ease:       cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  --spring:     cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease:       cubic-bezier(.25,.46,.45,.94);
+  --spring:     cubic-bezier(.34,1.56,.64,1);
 }
 
+/* ═══════════════════════════════════════
+   LIGHT MODE
+   ═══════════════════════════════════════ */
+body.light {
+  --void:       #f0eee8;
+  --deep:       #e8e6df;
+  --surface:    #ffffff;
+  --raised:     #f7f6f3;
+  --overlay:    #ffffff;
+  --rim:        rgba(90,70,200,.1);
+  --rim-bright: rgba(90,70,200,.22);
+  --violet:     #6347e7;
+  --violet-dim: rgba(99,71,231,.07);
+  --violet-glow:rgba(99,71,231,.16);
+  --coral:      #dc4429;
+  --coral-dim:  rgba(220,68,41,.06);
+  --mint:       #0fa87a;
+  --mint-dim:   rgba(15,168,122,.06);
+  --amber:      #c67a1a;
+  --amber-dim:  rgba(198,122,26,.06);
+  --ivory:      #1a1a30;
+  --ivory-dim:  rgba(26,26,48,.78);
+  --muted:      rgba(26,26,48,.52);
+  --ghost:      rgba(26,26,48,.12);
+  --card-shadow:0 4px 24px rgba(0,0,0,.06), 0 0 0 1px rgba(90,70,200,.06);
+  --text-primary:   #1a1a30;
+  --text-secondary: rgba(26,26,48,.65);
+  --text-tertiary:  rgba(26,26,48,.4);
+  --text-accent:    #5535d4;
+  --input-bg:       #f4f3ef;
+  --input-border:   rgba(90,70,200,.16);
+  --input-focus:    rgba(99,71,231,.4);
+}
+body.light::after { opacity: 0 !important; }
+body.light .aurora-blob { opacity: .18; }
+body.light .pdo-back { background: rgba(240,238,232,.92); backdrop-filter: blur(18px); }
+body.light .tweak-backdrop { background: rgba(240,238,232,.94); backdrop-filter: blur(18px); }
+body.light .lightbox-backdrop { background: rgba(240,238,232,.95); backdrop-filter: blur(18px); }
+body.light #progressOverlay { background: rgba(240,238,232,.96); }
+body.light .action-inner { background: rgba(255,255,255,.94); box-shadow: 0 -4px 32px rgba(0,0,0,.06), 0 0 0 1px rgba(90,70,200,.08); }
+body.light #toast { background: var(--surface); box-shadow: 0 6px 28px rgba(0,0,0,.1), 0 0 0 1px rgba(90,70,200,.08); }
+body.light .card-thumb::after { background: linear-gradient(to bottom, transparent 55%, rgba(255,255,255,.75) 100%); }
+body.light .card-dims { background: rgba(26,26,48,.7); color: #fff; }
+body.light .card-thumb-expand { background: rgba(26,26,48,.55); color: #fff; }
+body.light .drop-orb { box-shadow: 0 4px 20px rgba(0,0,0,.06); }
+body.light .config-panel { box-shadow: 0 2px 16px rgba(0,0,0,.04); }
+body.light .img-card { box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+body.light .img-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,.08), 0 0 0 1px rgba(90,70,200,.1); }
+body.light .crop-box-label { color: #fff !important; }
+body.light .tweak-canvas-area { background: repeating-conic-gradient(rgba(0,0,0,.03) 0% 25%, transparent 0% 50%) 0 0/20px 20px; }
+body.light .lightbox-close { background: rgba(220,68,41,.08); }
+body.light ::-webkit-scrollbar-track { background: var(--deep); }
+body.light ::-webkit-scrollbar-thumb { background: rgba(90,70,200,.2); }
+body.light ::-webkit-scrollbar-thumb:hover { background: var(--violet); }
+
+/* ═══════════════════════════════════════
+   BASE
+   ═══════════════════════════════════════ */
 html { scroll-behavior: smooth; }
-
 body {
-  background: var(--void);
-  color: var(--ivory);
-  font-family: var(--sans);
-  font-size: 13px;
-  min-height: 100vh;
-  overflow-x: hidden;
-  line-height: 1.5;
+  background: var(--void); color: var(--text-primary);
+  font-family: var(--sans); font-size: 13px;
+  min-height: 100vh; overflow-x: hidden; line-height: 1.5;
+  transition: background .3s, color .3s;
 }
 
-/* ── AURORA BACKGROUND ── */
-.aurora {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.aurora-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(110px);
-}
-
-.ab1 {
-  width: 700px; height: 700px;
-  top: -220px; left: -160px;
-  background: radial-gradient(circle, rgba(124,111,255,0.16) 0%, transparent 70%);
-  animation: drift1 24s ease-in-out infinite alternate;
-}
-
-.ab2 {
-  width: 550px; height: 550px;
-  bottom: -180px; right: -120px;
-  background: radial-gradient(circle, rgba(255,107,71,0.1) 0%, transparent 70%);
-  animation: drift2 19s ease-in-out infinite alternate;
-}
-
-.ab3 {
-  width: 450px; height: 450px;
-  top: 45%; left: 40%;
-  transform: translate(-50%,-50%);
-  background: radial-gradient(circle, rgba(0,229,160,0.05) 0%, transparent 70%);
-  animation: drift1 30s ease-in-out infinite alternate-reverse;
-}
-
-@keyframes drift1 { to { transform: translate(50px, 70px) scale(1.15); } }
-@keyframes drift2 { to { transform: translate(-40px, -50px) scale(1.1); } }
-
-/* Grain */
+/* ── AURORA ── */
+.aurora { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.aurora-blob { position: absolute; border-radius: 50%; filter: blur(110px); transition: opacity .5s; }
+.ab1 { width: 700px; height: 700px; top: -220px; left: -160px; background: radial-gradient(circle, rgba(139,122,255,.16) 0%, transparent 70%); animation: drift1 24s ease-in-out infinite alternate; }
+.ab2 { width: 550px; height: 550px; bottom: -180px; right: -120px; background: radial-gradient(circle, rgba(255,123,92,.1) 0%, transparent 70%); animation: drift2 19s ease-in-out infinite alternate; }
+.ab3 { width: 450px; height: 450px; top: 45%; left: 40%; transform: translate(-50%,-50%); background: radial-gradient(circle, rgba(46,237,181,.05) 0%, transparent 70%); animation: drift1 30s ease-in-out infinite alternate-reverse; }
+@keyframes drift1 { to { transform: translate(50px,70px) scale(1.15); } }
+@keyframes drift2 { to { transform: translate(-40px,-50px) scale(1.1); } }
 body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
+  content: ''; position: fixed; inset: 0;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.028'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 1;
+  pointer-events: none; z-index: 1; transition: opacity .3s;
 }
-
-/* ── SHELL ── */
-.shell {
-  position: relative;
-  z-index: 2;
-  max-width: 1380px;
-  margin: 0 auto;
-  padding: 0 40px 140px;
-}
+.shell { position: relative; z-index: 2; max-width: 1380px; margin: 0 auto; padding: 0 40px 140px; }
 
 /* ── MASTHEAD ── */
-.masthead {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  padding: 52px 0 44px;
-  border-bottom: 1px solid var(--rim);
-  gap: 24px;
-  flex-wrap: wrap;
-}
-
+.masthead { display: flex; align-items: flex-end; justify-content: space-between; padding: 48px 0 40px; border-bottom: 1px solid var(--rim); gap: 24px; flex-wrap: wrap; }
 .masthead-left { flex: 1; min-width: 240px; }
-
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--violet);
-  margin-bottom: 16px;
-}
-
-.eyebrow-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--mint);
-  box-shadow: 0 0 12px var(--mint);
-  animation: blink 3s ease-in-out infinite;
-}
-
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.18} }
-
-.masthead-title {
-  font-family: var(--serif);
-  font-size: clamp(30px, 4vw, 52px);
-  font-weight: 300;
-  line-height: 1.08;
-  letter-spacing: -0.025em;
-  color: var(--ivory);
-}
-
-.masthead-title em {
-  font-style: italic;
-  font-weight: 700;
-  color: var(--violet);
-}
-
-.masthead-meta {
-  margin-top: 14px;
-  font-size: 13px;
-  color: var(--muted);
-  font-weight: 300;
-  max-width: 500px;
-  line-height: 1.7;
-}
-
-.live-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(0,229,160,0.07);
-  border: 1px solid rgba(0,229,160,0.22);
-  border-radius: 100px;
-  padding: 7px 16px 7px 12px;
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--mint);
-  letter-spacing: 0.1em;
-  white-space: nowrap;
-}
-
-.live-pill-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--mint);
-  box-shadow: 0 0 10px var(--mint);
-  animation: blink 2.6s ease-in-out infinite;
-}
-
-/* ── SECTION ── */
-.section { margin-top: 52px; }
-
-.section-head {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 22px;
-}
-
-.step-badge {
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--void);
-  background: var(--violet);
-  padding: 4px 11px;
-  border-radius: 5px;
-  letter-spacing: 0.07em;
-  flex-shrink: 0;
-}
-
-.section-title {
-  font-family: var(--serif);
-  font-size: 20px;
-  font-weight: 400;
-  color: var(--ivory);
-  letter-spacing: -0.015em;
-}
-
-.section-sub {
-  margin-left: auto;
-  font-size: 11px;
-  color: var(--muted);
-  font-family: var(--mono);
-  letter-spacing: 0.05em;
-}
-
-/* ── CONFIG PANEL ── */
-.config-panel {
-  background: var(--surface);
-  border: 1px solid var(--rim);
-  border-radius: 18px;
-  padding: 30px;
-  position: relative;
-  overflow: hidden;
-}
-
-.config-panel::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(124,111,255,0.4), transparent);
-}
-
-.config-panel::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(140deg, rgba(124,111,255,0.04) 0%, transparent 55%);
-  pointer-events: none;
-}
-
-.config-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  position: relative;
-  z-index: 1;
-}
-
-.field { display: flex; flex-direction: column; gap: 8px; }
-
-.field-label {
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.req { color: var(--violet); font-size: 16px; line-height: 1; }
-
-.field-input {
-  background: var(--deep);
-  border: 1px solid var(--rim);
-  border-radius: 12px;
-  color: var(--ivory);
-  font-family: var(--mono);
-  font-size: 18px;
-  font-weight: 400;
-  padding: 15px 18px;
-  outline: none;
-  width: 100%;
-  transition: border-color 0.22s, box-shadow 0.22s;
-}
-
-.field-input::placeholder { color: var(--ghost); font-size: 15px; }
-
-.field-input:focus {
-  border-color: var(--violet);
-  box-shadow: 0 0 0 3px var(--violet-dim), 0 0 28px rgba(124,111,255,0.05);
-}
-
-.field-hint {
-  font-size: 10px;
-  color: var(--ghost);
-  font-family: var(--mono);
-  font-style: italic;
-}
-
-.preview-row {
-  grid-column: 1/-1;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 14px 18px;
-  background: var(--deep);
-  border: 1px dashed var(--rim-bright);
-  border-radius: 11px;
-}
-
-.preview-lbl {
-  font-family: var(--mono);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ghost);
-  white-space: nowrap;
-}
-
-#previewText {
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--violet);
-  letter-spacing: 0.02em;
-  word-break: break-all;
-  flex: 1;
-}
-
-/* ── UPLOAD ZONE ── */
-.upload-zone {
-  border-radius: 20px;
-  overflow: hidden;
-  border: 1px solid var(--rim);
-  background: var(--surface);
-  position: relative;
-  transition: border-color 0.3s;
-}
-
-.upload-zone.drag-active {
-  border-color: var(--violet);
-}
-
-.upload-zone::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(124,111,255,0.5), rgba(0,229,160,0.3), transparent);
-  transition: opacity 0.3s;
-}
-
-.drop-hero {
-  padding: 60px 40px;
-  text-align: center;
-  position: relative;
-}
-
-.drop-orb {
-  width: 84px; height: 84px;
-  margin: 0 auto 26px;
-  border-radius: 50%;
-  background: var(--raised);
-  border: 1px solid var(--rim-bright);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 38px;
-  transition: transform 0.4s var(--spring), box-shadow 0.3s;
-  box-shadow: 0 0 0 0 var(--violet-glow);
-}
-
-.upload-zone.drag-active .drop-orb {
-  transform: scale(1.14) translateY(-6px);
-  box-shadow: 0 0 50px var(--violet-glow);
-}
-
-.drop-headline {
-  font-family: var(--serif);
-  font-size: 24px;
-  font-weight: 300;
-  color: var(--ivory);
-  letter-spacing: -0.015em;
-  margin-bottom: 8px;
-}
-
-.drop-headline em { font-style: italic; color: var(--violet); }
-
-.drop-sub {
-  font-size: 13px;
-  color: var(--muted);
-  line-height: 1.75;
-  max-width: 460px;
-  margin: 0 auto;
-}
-
-.drop-sub strong { color: var(--ivory-dim); font-weight: 500; }
-
-.upload-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  border-top: 1px solid var(--rim);
-}
-
-.ua-btn {
-  background: none;
-  border: none;
-  border-right: 1px solid var(--rim);
-  color: var(--muted);
-  cursor: pointer;
-  padding: 24px 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 9px;
-  font-family: var(--sans);
-  font-size: 12px;
-  transition: background 0.2s, color 0.2s;
-}
-
-.ua-btn:last-child { border-right: none; }
-
-.ua-btn:hover { background: var(--raised); color: var(--ivory); }
-.ua-btn:hover .ua-icon { transform: translateY(-4px) scale(1.18); color: var(--violet); }
-
-.ua-icon {
-  font-size: 24px;
-  display: block;
-  transition: transform 0.25s var(--spring), color 0.2s;
-}
-
-.ua-label { font-weight: 600; font-size: 12.5px; }
-
-.ua-hint {
-  font-size: 10px;
-  color: var(--ghost);
-  text-align: center;
-  line-height: 1.45;
-  font-family: var(--mono);
-}
-
-.tip-bar {
-  padding: 12px 24px;
-  background: rgba(0,229,160,0.04);
-  border-top: 1px solid rgba(0,229,160,0.14);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-family: var(--mono);
-  font-size: 10.5px;
-  color: rgba(0,229,160,0.65);
-  letter-spacing: 0.04em;
-  flex-wrap: wrap;
-}
-
-.tip-icon { font-size: 14px; flex-shrink: 0; }
-
-.format-chips {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-left: auto;
-  flex-wrap: wrap;
-}
-
-.chip {
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--ghost);
-  border: 1px solid var(--rim);
-  padding: 2px 7px;
-  border-radius: 3px;
-}
-
-#fileInput, #zipInput { display: none; }
-
-/* ── ADD MORE ── */
-#addMoreStrip {
-  display: none;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 16px 22px;
-  border: 1px dashed var(--rim);
-  border-radius: 14px;
-  transition: border-color 0.2s, background 0.2s;
-  flex-wrap: wrap;
-  margin-top: 16px;
-}
-
-#addMoreStrip:hover {
-  border-color: var(--violet);
-  background: var(--violet-dim);
-}
-
-.am-left { display: flex; align-items: center; gap: 12px; }
-
-.am-icon {
-  width: 38px; height: 38px;
-  border-radius: 9px;
-  background: var(--raised);
-  border: 1px solid var(--rim-bright);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 17px;
-  flex-shrink: 0;
-}
-
-.am-title { font-weight: 600; font-size: 13px; color: var(--ivory-dim); }
-#addMoreStrip:hover .am-title { color: var(--ivory); }
-.am-sub { font-size: 11px; color: var(--ghost); margin-top: 1px; }
-
-.am-btn {
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 500;
-  padding: 8px 16px;
-  border: 1px solid var(--rim-bright);
-  border-radius: 8px;
-  background: var(--raised);
-  color: var(--ivory-dim);
-  cursor: pointer;
-  transition: all 0.15s;
-  letter-spacing: 0.05em;
-}
-
-.am-btn:hover { background: var(--violet); border-color: var(--violet); color: var(--void); }
-
-/* ── FULL-PAGE DROP OVERLAY ── */
-#pageDropOverlay {
-  position: fixed; inset: 0; z-index: 9000;
-  pointer-events: none; opacity: 0;
-  transition: opacity 0.2s;
-  display: flex; align-items: center; justify-content: center;
-}
-
-#pageDropOverlay.active { pointer-events: all; opacity: 1; }
-
-.pdo-back {
-  position: absolute; inset: 0;
-  background: rgba(5,5,14,0.9);
-  backdrop-filter: blur(14px);
-}
-
-.pdo-box {
-  position: relative; z-index: 1;
-  text-align: center;
-  padding: 88px 64px;
-  border: 2px dashed rgba(124,111,255,0.55);
-  border-radius: 28px;
-  width: min(860px, calc(100vw - 80px));
-  background: rgba(124,111,255,0.035);
-  box-shadow: 0 0 120px rgba(124,111,255,0.08), inset 0 0 80px rgba(124,111,255,0.04);
-  transform: scale(0.95);
-  transition: transform 0.22s var(--spring);
-}
-
-#pageDropOverlay.active .pdo-box { transform: scale(1); }
-
-.pdo-icon {
-  font-size: 80px; display: block; margin-bottom: 28px;
-  animation: levitate 2.4s ease-in-out infinite;
-}
-
-@keyframes levitate {
-  0%,100% { transform: translateY(0) rotate(-2deg); }
-  50%      { transform: translateY(-16px) rotate(2deg); }
-}
-
-.pdo-title {
-  font-family: var(--serif);
-  font-size: 40px; font-weight: 300;
-  color: var(--ivory); letter-spacing: -0.025em; margin-bottom: 10px;
-}
-
-.pdo-title em { font-style: italic; color: var(--violet); }
-
-.pdo-sub { font-size: 14px; color: var(--muted); }
-
-.pdo-count {
-  margin-top: 22px;
-  font-family: var(--mono);
-  font-size: 11px; color: var(--violet);
-  letter-spacing: 0.1em; opacity: 0.8;
-}
-
-/* ── GRID SECTION ── */
-#gridSection { display: none; }
-
-.grid-toolbar {
-  display: flex; align-items: center;
-  gap: 16px; margin-bottom: 26px; flex-wrap: wrap;
-}
-
-.grid-tally strong {
-  font-family: var(--serif);
-  font-size: 34px; font-weight: 700;
-  color: var(--ivory); line-height: 1; margin-right: 5px;
-}
-
-.grid-tally span { font-size: 13px; color: var(--muted); }
-
-.conflict-pill {
-  display: none;
-  align-items: center; gap: 8px;
-  padding: 8px 16px;
-  background: var(--coral-dim);
-  border: 1px solid rgba(255,107,71,0.3);
-  border-radius: 100px;
-  font-size: 11px; font-weight: 600;
-  color: var(--coral); letter-spacing: 0.04em;
-}
-
-.conflict-pill.visible { display: flex; }
+.eyebrow { display: inline-flex; align-items: center; gap: 9px; font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .15em; text-transform: uppercase; color: var(--text-accent); margin-bottom: 14px; }
+.eyebrow-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 12px var(--mint); animation: blink 3s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.18} }
+.masthead-title { font-family: var(--serif); font-size: clamp(26px,3.5vw,44px); font-weight: 300; line-height: 1.1; letter-spacing: -.025em; color: var(--text-primary); text-shadow: 0 0 80px rgba(139,122,255,.1); }
+.masthead-title em { font-style: italic; font-weight: 700; color: var(--violet); text-shadow: 0 0 40px var(--violet-glow); }
+.masthead-meta { margin-top: 12px; font-size: 13.5px; color: var(--text-secondary); font-weight: 300; max-width: 500px; line-height: 1.7; }
+.masthead-right { display: flex; align-items: center; gap: 12px; }
+.live-pill { display: inline-flex; align-items: center; gap: 8px; background: rgba(46,237,181,.07); border: 1px solid rgba(46,237,181,.22); border-radius: 100px; padding: 7px 14px 7px 10px; font-family: var(--mono); font-size: 10px; font-weight: 600; color: var(--mint); letter-spacing: .1em; white-space: nowrap; }
+.live-pill-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 10px var(--mint); animation: blink 2.6s ease-in-out infinite; }
+
+/* ── THEME TOGGLE ── */
+.theme-toggle { width: 40px; height: 40px; border-radius: 10px; background: var(--raised); border: 1px solid var(--rim); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 19px; transition: all .2s; color: var(--text-secondary); }
+.theme-toggle:hover { border-color: var(--violet); color: var(--text-primary); background: var(--violet-dim); }
+
+/* ── SECTIONS ── */
+.section { margin-top: 44px; }
+.section-head { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.step-badge { font-family: var(--mono); font-size: 10.5px; font-weight: 800; color: var(--void); background: var(--violet); padding: 4px 11px; border-radius: 5px; letter-spacing: .07em; flex-shrink: 0; box-shadow: 0 2px 8px var(--violet-glow); }
+.section-title { font-family: var(--serif); font-size: 20px; font-weight: 500; color: var(--text-primary); letter-spacing: -.015em; }
+.section-sub { margin-left: auto; font-size: 11px; color: var(--text-secondary); font-family: var(--mono); letter-spacing: .05em; }
 .spacer { flex: 1; }
 
-.tbtn {
-  font-family: var(--sans); font-weight: 600;
-  font-size: 12px; padding: 9px 18px;
-  border-radius: 9px; border: 1px solid var(--rim);
-  background: var(--surface); color: var(--muted);
-  cursor: pointer; transition: all 0.15s; letter-spacing: 0.02em;
-}
+/* ── CONFIG PANEL ── */
+.config-panel { background: var(--surface); border: 1px solid var(--rim); border-radius: 18px; padding: 28px; position: relative; overflow: hidden; transition: background .3s, border-color .3s, box-shadow .3s; }
+.config-panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(139,122,255,.4), transparent); }
+.config-panel::after { content: ''; position: absolute; inset: 0; background: linear-gradient(140deg, rgba(139,122,255,.04) 0%, transparent 55%); pointer-events: none; }
+.config-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; position: relative; z-index: 1; }
 
-.tbtn:hover { background: var(--raised); color: var(--ivory); border-color: var(--rim-bright); }
+/* ── FIELDS ── */
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field-label { font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+.req { color: var(--violet); font-size: 16px; line-height: 1; }
+.field-input, .field-select { background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 11px; color: var(--text-primary); font-family: var(--mono); font-size: 17px; font-weight: 500; padding: 13px 16px; outline: none; width: 100%; transition: all .22s; }
+.field-select { font-size: 13px; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b7aff' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 34px; }
+.field-select option { background: var(--raised); color: var(--text-primary); }
+.field-input::placeholder { color: var(--text-tertiary); font-size: 14px; font-weight: 400; }
+.field-input:focus, .field-select:focus { border-color: var(--input-focus); box-shadow: 0 0 0 3px var(--violet-dim), 0 0 20px rgba(139,122,255,.06); }
+.field-hint { font-size: 10.5px; color: var(--text-tertiary); font-family: var(--mono); font-style: italic; }
 
-/* ── IMAGE CARDS ── */
-#imageGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 18px;
-}
+/* ── PREVIEW ROWS ── */
+.preview-row { grid-column: 1/-1; display: flex; align-items: center; gap: 14px; padding: 12px 16px; background: var(--deep); border: 1px dashed var(--rim-bright); border-radius: 10px; flex-wrap: wrap; }
+.preview-lbl { font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text-tertiary); white-space: nowrap; }
+.preview-text { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--text-accent); letter-spacing: .02em; word-break: break-all; flex: 1; }
 
-.img-card {
-  background: var(--surface);
-  border: 1px solid var(--rim);
-  border-radius: 18px; overflow: hidden;
-  position: relative;
-  animation: card-in 0.38s var(--ease) both;
-  transition: box-shadow 0.28s, border-color 0.28s, transform 0.28s var(--ease);
-}
+/* ── DRESS TOGGLE ── */
+.toggle-row { display: flex; align-items: center; gap: 10px; }
+.mini-toggle { width: 36px; height: 20px; border-radius: 10px; background: var(--overlay); border: 1px solid var(--rim); cursor: pointer; position: relative; transition: background .2s, border-color .2s; flex-shrink: 0; }
+.mini-toggle.on { background: rgba(139,122,255,.3); border-color: var(--violet); }
+.mini-toggle::after { content: ''; position: absolute; width: 14px; height: 14px; border-radius: 50%; background: var(--ghost); top: 2px; left: 2px; transition: transform .2s var(--spring), background .2s; }
+.mini-toggle.on::after { transform: translateX(16px); background: var(--violet); }
+.toggle-label { font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--text-secondary); letter-spacing: .05em; }
 
-.img-card:hover {
-  border-color: var(--rim-bright);
-  box-shadow: 0 16px 56px rgba(0,0,0,0.55), 0 0 0 1px rgba(124,111,255,0.1);
-  transform: translateY(-4px);
-}
+/* ── TABS ── */
+.tab-bar { display: flex; gap: 4px; margin-top: 32px; padding: 4px; background: var(--deep); border: 1px solid var(--rim); border-radius: 14px; width: fit-content; transition: background .3s, border-color .3s; }
+.tab-btn { font-family: var(--mono); font-size: 12.5px; font-weight: 700; padding: 10px 26px; border-radius: 10px; border: none; cursor: pointer; background: transparent; color: var(--text-secondary); transition: all .2s; letter-spacing: .04em; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+.tab-btn.active { background: var(--violet); color: #fff; box-shadow: 0 0 20px var(--violet-glow); text-shadow: 0 1px 8px rgba(0,0,0,.3); }
+.tab-btn:not(.active):hover { background: var(--raised); color: var(--text-primary); }
+.tab-btn-icon { font-size: 15px; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.sync-badge { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 9px; font-weight: 600; color: var(--mint); background: var(--mint-dim); border: 1px solid rgba(46,237,181,.2); padding: 3px 10px; border-radius: 100px; letter-spacing: .05em; margin-left: 8px; }
+.sync-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--mint); animation: blink 2s ease-in-out infinite; }
 
-.img-card.conflict {
-  border-color: rgba(255,107,71,0.5);
-  box-shadow: 0 0 0 1px rgba(255,107,71,0.15);
-}
+/* ── PROFILES ── */
+.profiles-section { margin-top: 24px; position: relative; z-index: 1; }
+.profiles-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.profiles-header-title { font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text-secondary); }
+.btn-sm { font-family: var(--mono); font-size: 10px; font-weight: 700; padding: 6px 14px; border-radius: 7px; border: 1px solid var(--rim-bright); background: var(--raised); color: var(--ivory-dim); cursor: pointer; transition: all .15s; letter-spacing: .04em; }
+.btn-sm:hover { background: var(--violet); border-color: var(--violet); color: #fff; }
+.profile-list { display: flex; flex-direction: column; gap: 8px; }
+.profile-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--deep); border: 1px solid var(--rim); border-radius: 11px; flex-wrap: wrap; transition: border-color .2s; }
+.profile-row:hover { border-color: var(--rim-bright); }
+.profile-color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.profile-toggle { width: 36px; height: 20px; border-radius: 10px; background: var(--overlay); border: 1px solid var(--rim); cursor: pointer; position: relative; transition: background .2s, border-color .2s; flex-shrink: 0; }
+.profile-toggle.active { background: rgba(139,122,255,.3); border-color: var(--violet); }
+.profile-toggle::after { content: ''; position: absolute; width: 14px; height: 14px; border-radius: 50%; background: var(--ghost); top: 2px; left: 2px; transition: transform .2s var(--spring), background .2s; }
+.profile-toggle.active::after { transform: translateX(16px); background: var(--violet); }
+.profile-name-input { background: transparent; border: none; color: var(--text-primary); font-family: var(--mono); font-size: 12.5px; font-weight: 700; width: 90px; outline: none; border-bottom: 1px solid transparent; padding: 2px 0; }
+.profile-name-input:focus { border-bottom-color: var(--violet); }
+.profile-controls { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 280px; flex-wrap: wrap; }
+.psg { display: flex; flex-direction: column; gap: 2px; }
+.psg-label { font-family: var(--mono); font-size: 8.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-tertiary); }
+.psg-row { display: flex; align-items: center; gap: 5px; }
+.psg-slider { width: 72px; height: 3px; -webkit-appearance: none; appearance: none; background: var(--rim); border-radius: 2px; outline: none; cursor: pointer; }
+.psg-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--violet); cursor: pointer; box-shadow: 0 0 6px var(--violet-glow); }
+.psg-val { font-family: var(--mono); font-size: 10px; font-weight: 600; color: var(--text-secondary); min-width: 28px; text-align: right; }
+.psg-select { background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 5px; color: var(--text-primary); font-family: var(--mono); font-size: 9px; font-weight: 500; padding: 3px 6px; outline: none; cursor: pointer; }
+.psg-select option { background: var(--raised); }
+.profile-del { width: 22px; height: 22px; border-radius: 50%; background: rgba(255,123,92,.08); border: 1px solid rgba(255,123,92,.2); color: var(--coral); font-size: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; opacity: .4; transition: opacity .2s, background .2s; }
+.profile-row:hover .profile-del { opacity: 1; }
+.profile-del:hover { background: rgba(255,123,92,.28); }
 
-@keyframes card-in {
-  from { opacity: 0; transform: translateY(22px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
+/* ── UPLOAD ── */
+.upload-zone { border-radius: 18px; overflow: hidden; border: 1px solid var(--rim); background: var(--surface); position: relative; transition: border-color .3s, background .3s; }
+.upload-zone.drag-active { border-color: var(--violet); }
+.upload-zone::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(139,122,255,.5), rgba(46,237,181,.3), transparent); }
+.drop-hero { padding: 44px 36px; text-align: center; }
+.drop-orb { width: 70px; height: 70px; margin: 0 auto 20px; border-radius: 50%; background: var(--raised); border: 1px solid var(--rim-bright); display: flex; align-items: center; justify-content: center; font-size: 30px; transition: transform .4s var(--spring), box-shadow .3s; }
+.upload-zone.drag-active .drop-orb { transform: scale(1.14) translateY(-6px); box-shadow: 0 0 50px var(--violet-glow); }
+.drop-headline { font-family: var(--serif); font-size: 21px; font-weight: 400; color: var(--text-primary); margin-bottom: 7px; }
+.drop-headline em { font-style: italic; font-weight: 700; color: var(--violet); }
+.drop-sub { font-size: 13px; color: var(--text-secondary); line-height: 1.7; max-width: 420px; margin: 0 auto; }
+.drop-sub strong { color: var(--text-primary); font-weight: 600; }
+.upload-actions { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; border-top: 1px solid var(--rim); }
+.ua-btn { background: none; border: none; border-right: 1px solid var(--rim); color: var(--muted); cursor: pointer; padding: 20px 14px; display: flex; flex-direction: column; align-items: center; gap: 7px; font-family: var(--sans); font-size: 11px; transition: background .2s, color .2s; }
+.ua-btn:last-child { border-right: none; }
+.ua-btn:hover { background: var(--raised); color: var(--text-primary); }
+.ua-btn:hover .ua-icon { transform: translateY(-3px) scale(1.15); color: var(--violet); }
+.ua-icon { font-size: 20px; display: block; transition: transform .25s var(--spring), color .2s; }
+.ua-label { font-weight: 700; font-size: 11.5px; color: var(--text-secondary); }
+.ua-btn:hover .ua-label { color: var(--text-primary); }
+.ua-hint { font-size: 9.5px; color: var(--text-tertiary); text-align: center; line-height: 1.4; font-family: var(--mono); }
+.tip-bar { padding: 10px 20px; background: rgba(46,237,181,.04); border-top: 1px solid rgba(46,237,181,.14); display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10.5px; font-weight: 500; color: var(--mint); flex-wrap: wrap; }
+.tip-icon { font-size: 13px; flex-shrink: 0; }
+.format-chips { display: flex; align-items: center; gap: 4px; margin-left: auto; flex-wrap: wrap; }
+.chip { font-family: var(--mono); font-size: 8px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--text-tertiary); border: 1px solid var(--rim-bright); padding: 2px 6px; border-radius: 3px; }
+.hidden-input { display: none; }
+.add-more-strip { display: none; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; border: 1px dashed var(--rim); border-radius: 12px; transition: border-color .2s, background .2s; flex-wrap: wrap; margin-top: 14px; }
+.add-more-strip:hover { border-color: var(--violet); background: var(--violet-dim); }
+.am-left { display: flex; align-items: center; gap: 10px; }
+.am-icon { width: 34px; height: 34px; border-radius: 8px; background: var(--raised); border: 1px solid var(--rim-bright); display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+.am-title { font-weight: 700; font-size: 12px; color: var(--text-secondary); }
+.am-sub { font-size: 10.5px; color: var(--text-tertiary); margin-top: 1px; }
+.am-btn { font-family: var(--mono); font-size: 11px; font-weight: 600; padding: 8px 16px; border: 1px solid var(--rim-bright); border-radius: 8px; background: var(--raised); color: var(--ivory-dim); cursor: pointer; transition: all .15s; }
+.am-btn:hover { background: var(--violet); border-color: var(--violet); color: #fff; }
 
-.card-chrome {
-  padding: 9px 11px;
-  border-bottom: 1px solid var(--rim);
-  display: flex; align-items: center; gap: 7px;
-  background: var(--raised);
-}
+/* ── OVERLAYS ── */
+#pageDropOverlay { position: fixed; inset: 0; z-index: 9000; pointer-events: none; opacity: 0; transition: opacity .2s; display: flex; align-items: center; justify-content: center; }
+#pageDropOverlay.active { pointer-events: all; opacity: 1; }
+.pdo-back { position: absolute; inset: 0; background: rgba(6,6,15,.9); backdrop-filter: blur(14px); transition: background .3s; }
+.pdo-box { position: relative; z-index: 1; text-align: center; padding: 70px 50px; border: 2px dashed rgba(139,122,255,.55); border-radius: 24px; width: min(800px, calc(100vw - 80px)); background: rgba(139,122,255,.035); transform: scale(.95); transition: transform .22s var(--spring); }
+#pageDropOverlay.active .pdo-box { transform: scale(1); }
+.pdo-icon { font-size: 64px; display: block; margin-bottom: 20px; animation: levitate 2.4s ease-in-out infinite; }
+@keyframes levitate { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-14px) rotate(2deg)} }
+.pdo-title { font-family: var(--serif); font-size: 34px; font-weight: 300; color: var(--text-primary); margin-bottom: 8px; }
+.pdo-title em { font-style: italic; color: var(--violet); }
+.pdo-sub { font-size: 14px; font-weight: 400; color: var(--text-secondary); }
+.pdo-count { margin-top: 16px; font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--text-accent); letter-spacing: .1em; }
 
-.card-chrome-actions {
-  display: flex; align-items: center; gap: 5px;
-  margin-left: auto;
-}
+#progressOverlay { display: none; position: fixed; inset: 0; background: rgba(6,6,15,.92); backdrop-filter: blur(20px); z-index: 10000; align-items: center; justify-content: center; flex-direction: column; gap: 20px; transition: background .3s; }
+#progressOverlay.active { display: flex; }
+.prog-title { font-family: var(--serif); font-size: 23px; font-weight: 300; color: var(--text-primary); }
+.prog-title em { font-style: italic; color: var(--violet); }
+.prog-bar-wrap { width: 320px; height: 3px; background: var(--rim); border-radius: 2px; overflow: hidden; }
+.prog-bar-fill { height: 100%; background: linear-gradient(90deg, var(--violet), var(--mint)); border-radius: 2px; transition: width .22s var(--ease); box-shadow: 0 0 14px var(--violet-glow); }
+.prog-sub { font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--text-secondary); }
 
-.card-idx {
-  font-family: var(--mono); font-size: 10px; font-weight: 700;
-  color: var(--ghost); letter-spacing: 0.07em;
-}
+#toast { position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%) translateY(18px); background: var(--overlay); border: 1px solid var(--rim-bright); border-radius: 100px; padding: 11px 22px; font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--text-primary); z-index: 9999; opacity: 0; transition: all .3s var(--spring); pointer-events: none; white-space: nowrap; box-shadow: 0 10px 40px rgba(0,0,0,.55); }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast.toast-success { border-color: rgba(46,237,181,.45); color: var(--mint); }
+#toast.toast-error { border-color: rgba(255,123,92,.45); color: var(--coral); }
 
-.conf-tag {
-  font-family: var(--mono); font-size: 9px; font-weight: 500;
-  padding: 3px 9px; border-radius: 4px; letter-spacing: 0.06em; text-transform: uppercase;
-}
-
-.conf-high { background: var(--mint-dim);   color: var(--mint);   border: 1px solid rgba(0,229,160,0.2); }
-.conf-med  { background: var(--violet-dim); color: var(--violet); border: 1px solid rgba(124,111,255,0.2); }
-.conf-low  { background: var(--coral-dim);  color: var(--coral);  border: 1px solid rgba(255,107,71,0.2); }
-.conf-custom { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,179,71,0.25); }
-
-.card-thumb {
-  width: 100%; aspect-ratio: 3/4;
-  background: var(--deep);
-  overflow: hidden; position: relative;
-  display: flex; align-items: center; justify-content: center;
-}
-
-.card-thumb img {
-  width: 100%; height: 100%;
-  object-fit: contain;
-  transition: transform 0.4s var(--ease);
-}
-
-.img-card:hover .card-thumb img { transform: scale(1.05); }
-
-.card-thumb::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(to bottom, transparent 52%, rgba(9,9,26,0.72) 100%);
-  pointer-events: none;
-}
-
-.card-body { padding: 15px; display: flex; flex-direction: column; gap: 11px; }
-
-.card-fname {
-  font-family: var(--mono); font-size: 10px;
-  color: var(--ghost); font-style: italic;
-  word-break: break-all; line-height: 1.55;
-  background: var(--deep); border: 1px solid var(--rim);
-  border-radius: 7px; padding: 8px 10px;
-  max-height: 58px; overflow-y: auto;
-}
-
+/* ── GRID & CARDS ── */
+.grid-section { display: none; }
+.grid-toolbar { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; flex-wrap: wrap; }
+.grid-tally strong { font-family: var(--serif); font-size: 32px; font-weight: 700; color: var(--text-primary); line-height: 1; margin-right: 4px; }
+.grid-tally span { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+.conflict-pill { display: none; align-items: center; gap: 7px; padding: 7px 14px; background: var(--coral-dim); border: 1px solid rgba(255,123,92,.3); border-radius: 100px; font-size: 11px; font-weight: 700; color: var(--coral); }
+.conflict-pill.visible { display: flex; }
+.tbtn { font-family: var(--sans); font-weight: 700; font-size: 11.5px; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--rim); background: var(--surface); color: var(--text-secondary); cursor: pointer; transition: all .15s; }
+.tbtn:hover { background: var(--raised); color: var(--text-primary); border-color: var(--rim-bright); }
+.image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(285px, 1fr)); gap: 16px; }
+.img-card { background: var(--surface); border: 1px solid var(--rim); border-radius: 16px; overflow: hidden; animation: card-in .35s var(--ease) both; transition: box-shadow .28s, border-color .28s, transform .28s var(--ease), background .3s; }
+.img-card:hover { border-color: var(--rim-bright); box-shadow: var(--card-shadow); transform: translateY(-3px); }
+.img-card.conflict { border-color: rgba(255,123,92,.5); box-shadow: 0 0 0 1px rgba(255,123,92,.15); }
+@keyframes card-in { from{opacity:0;transform:translateY(18px) scale(.97)} to{opacity:1;transform:none} }
+.card-chrome { padding: 8px 10px; border-bottom: 1px solid var(--rim); display: flex; align-items: center; gap: 6px; background: var(--raised); }
+.card-chrome-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.card-idx { font-family: var(--mono); font-size: 10px; font-weight: 700; color: var(--text-tertiary); }
+.conf-tag { font-family: var(--mono); font-size: 8.5px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: .07em; text-transform: uppercase; }
+.conf-high { background: var(--mint-dim); color: var(--mint); border: 1px solid rgba(46,237,181,.25); }
+.conf-med { background: var(--violet-dim); color: var(--violet); border: 1px solid rgba(139,122,255,.25); }
+.conf-low { background: var(--coral-dim); color: var(--coral); border: 1px solid rgba(255,123,92,.25); }
+.conf-custom { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,190,92,.25); }
+.card-thumb { width: 100%; aspect-ratio: 3/4; background: var(--deep); overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.card-thumb img { width: 100%; height: 100%; object-fit: contain; transition: transform .4s var(--ease); }
+.img-card:hover .card-thumb img { transform: scale(1.04); }
+.card-thumb::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 55%, rgba(6,6,15,.6) 100%); pointer-events: none; }
+.card-thumb-expand { position: absolute; bottom: 7px; right: 7px; z-index: 3; width: 26px; height: 26px; border-radius: 6px; background: rgba(0,0,0,.55); border: 1px solid var(--rim-bright); color: var(--ivory); font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .2s; }
+.img-card:hover .card-thumb-expand { opacity: 1; }
+.card-thumb-expand:hover { background: var(--violet); }
+.card-dims { position: absolute; top: 7px; left: 7px; z-index: 3; font-family: var(--mono); font-size: 9px; font-weight: 600; color: #fff; background: rgba(0,0,0,.55); padding: 2px 7px; border-radius: 4px; pointer-events: none; letter-spacing: .03em; }
+.card-body { padding: 13px; display: flex; flex-direction: column; gap: 9px; }
+.card-fname { font-family: var(--mono); font-size: 10px; font-weight: 500; color: var(--text-secondary); word-break: break-all; line-height: 1.5; background: var(--deep); border: 1px solid var(--rim); border-radius: 6px; padding: 7px 9px; max-height: 40px; overflow-y: auto; }
 .card-fname::-webkit-scrollbar { width: 2px; }
 .card-fname::-webkit-scrollbar-thumb { background: var(--rim-bright); }
+.angle-lbl { font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 4px; }
+.angle-select { width: 100%; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 8px; color: var(--text-primary); font-family: var(--mono); font-size: 11.5px; font-weight: 500; padding: 9px 30px 9px 11px; outline: none; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b7aff' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; transition: border-color .2s, box-shadow .2s; }
+.angle-select:focus { border-color: var(--input-focus); box-shadow: 0 0 0 3px var(--violet-dim); }
+.angle-select option { background: var(--raised); color: var(--text-primary); }
+.angle-select optgroup { font-weight: 800; color: var(--text-secondary); background: var(--deep); }
+.custom-angle-wrap { margin-top: 7px; display: none; }
+.custom-angle-wrap.visible { display: block; animation: fade-in .2s ease; }
+@keyframes fade-in { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+.custom-angle-input { width: 100%; background: var(--input-bg); border: 1px solid var(--amber); border-radius: 7px; color: var(--text-primary); font-family: var(--mono); font-size: 10px; font-weight: 500; padding: 8px 10px; outline: none; }
+.custom-angle-input::placeholder { color: var(--text-tertiary); font-style: italic; }
+.custom-angle-input:focus { border-color: var(--violet); box-shadow: 0 0 0 3px var(--violet-dim); }
+.custom-hint { font-family: var(--mono); font-size: 8px; font-weight: 500; color: var(--amber); margin-top: 4px; opacity: .8; }
+.card-out { font-family: var(--mono); font-size: 9.5px; font-weight: 600; color: var(--violet); letter-spacing: .02em; line-height: 1.45; word-break: break-all; }
+.card-out-row { display: flex; align-items: center; gap: 5px; }
+.card-out-row .card-out { flex: 1; }
+.card-outputs { display: flex; flex-direction: column; gap: 3px; }
 
-.angle-lbl {
-  font-family: var(--mono); font-size: 9px; font-weight: 500;
-  letter-spacing: 0.11em; text-transform: uppercase;
-  color: var(--ghost); margin-bottom: 5px;
-}
+/* ── ICON BUTTONS ── */
+.icon-btn { width: 24px; height: 24px; border-radius: 50%; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; opacity: .4; transition: opacity .2s, background .2s, transform .15s; border: 1px solid; }
+.img-card:hover .icon-btn { opacity: 1; }
+.icon-btn.dl { background: rgba(46,237,181,.08); border-color: rgba(46,237,181,.2); color: var(--mint); }
+.icon-btn.dl:hover { background: rgba(46,237,181,.28); transform: scale(1.1); }
+.icon-btn.del { background: rgba(255,123,92,.08); border-color: rgba(255,123,92,.2); color: var(--coral); }
+.icon-btn.del:hover { background: rgba(255,123,92,.28); }
+.icon-btn.sm { width: 20px; height: 20px; font-size: 9px; }
 
-.angle-select {
-  width: 100%;
-  background: var(--deep);
-  border: 1px solid var(--rim); border-radius: 9px;
-  color: var(--ivory); font-family: var(--mono); font-size: 11.5px;
-  padding: 10px 34px 10px 13px;
-  outline: none; cursor: pointer; appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237c6fff' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.angle-select:focus {
-  border-color: var(--violet);
-  box-shadow: 0 0 0 3px var(--violet-dim);
-}
-
-.angle-select option { background: var(--overlay); color: var(--ivory); }
-
-.angle-select optgroup {
-  font-weight: 700;
-  color: var(--muted);
-  background: var(--deep);
-}
-
-/* Custom angle input */
-.custom-angle-wrap {
-  margin-top: 8px;
-  display: none;
-}
-
-.custom-angle-wrap.visible {
-  display: block;
-  animation: fade-in 0.2s ease;
-}
-
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.custom-angle-input {
-  width: 100%;
-  background: var(--deep);
-  border: 1px solid var(--amber);
-  border-radius: 8px;
-  color: var(--ivory);
-  font-family: var(--mono);
-  font-size: 11px;
-  padding: 9px 12px;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.custom-angle-input::placeholder {
-  color: var(--ghost);
-  font-style: italic;
-}
-
-.custom-angle-input:focus {
-  border-color: var(--violet);
-  box-shadow: 0 0 0 3px var(--violet-dim);
-}
-
-.custom-hint {
-  font-family: var(--mono);
-  font-size: 9px;
-  color: var(--amber);
-  margin-top: 5px;
-  opacity: 0.7;
-}
-
-.card-out {
-  font-family: var(--mono); font-size: 10px;
-  color: var(--violet); letter-spacing: 0.02em;
-  line-height: 1.55; word-break: break-all; opacity: 0.88;
-}
-
-.card-del {
-  width: 26px; height: 26px; border-radius: 50%;
-  background: rgba(255,107,71,0.08);
-  border: 1px solid rgba(255,107,71,0.2);
-  color: var(--coral); font-size: 11px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  opacity: 0.4; transition: opacity 0.2s, background 0.2s;
-}
-
-.img-card:hover .card-del { opacity: 1; }
-.card-del:hover { background: rgba(255,107,71,0.28); }
-
-.card-dl {
-  width: 26px; height: 26px; border-radius: 50%;
-  background: rgba(0,229,160,0.08);
-  border: 1px solid rgba(0,229,160,0.2);
-  color: var(--mint); font-size: 12px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  opacity: 0.4; transition: opacity 0.2s, background 0.2s, transform 0.18s;
-  text-decoration: none;
-}
-
-.img-card:hover .card-dl { opacity: 1; }
-.card-dl:hover { background: rgba(0,229,160,0.28); transform: scale(1.1); }
+/* ── TWEAK BUTTON & CROP PREVIEWS ── */
+.btn-tweak { font-family: var(--mono); font-size: 10.5px; font-weight: 700; padding: 7px 12px; border-radius: 7px; border: 1px solid var(--rim-bright); background: var(--raised); color: var(--text-secondary); cursor: pointer; transition: all .15s; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px; letter-spacing: .03em; }
+.btn-tweak:hover { background: var(--violet-dim); border-color: var(--violet); color: var(--text-primary); }
+.crop-preview-strip { display: flex; gap: 7px; flex-wrap: wrap; }
+.crop-preview-item { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.crop-preview-thumb { width: 56px; height: 56px; border-radius: 7px; overflow: hidden; border: 2px solid var(--rim); background: var(--deep); background-repeat: no-repeat; }
+.crop-preview-thumb-label { font-family: var(--mono); font-size: 7.5px; font-weight: 600; color: var(--ghost); text-transform: uppercase; text-align: center; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ── ACTION BAR ── */
-#actionBar { display: none; position: sticky; bottom: 28px; z-index: 200; margin-top: 40px; }
-
-.action-inner {
-  background: rgba(9,9,26,0.9);
-  backdrop-filter: blur(28px) saturate(1.5);
-  border: 1px solid var(--rim-bright);
-  border-radius: 18px;
-  padding: 20px 26px;
-  display: flex; align-items: center; gap: 20px;
-  box-shadow:
-    0 28px 90px rgba(0,0,0,0.75),
-    0 0 0 1px rgba(255,255,255,0.04),
-    inset 0 1px 0 rgba(255,255,255,0.06);
-  flex-wrap: wrap;
-}
-
-.action-info { flex: 1; min-width: 180px; }
-
-.action-title {
-  font-family: var(--serif); font-size: 17px;
-  font-weight: 400; color: var(--ivory); letter-spacing: -0.01em;
-}
-
-.action-sub {
-  font-family: var(--mono); font-size: 10px;
-  color: var(--ghost); margin-top: 3px; letter-spacing: 0.05em;
-}
-
-.btn-ghost {
-  font-family: var(--sans); font-weight: 600; font-size: 13px;
-  padding: 12px 22px; border-radius: 11px;
-  border: 1px solid var(--rim); background: transparent;
-  color: var(--muted); cursor: pointer;
-  transition: all 0.15s;
-  display: flex; align-items: center; gap: 7px; white-space: nowrap;
-}
-
-.btn-ghost:hover { background: var(--surface); color: var(--ivory); border-color: var(--rim-bright); }
-
-.btn-cta {
-  font-family: var(--sans); font-weight: 700; font-size: 14px;
-  padding: 14px 30px; border-radius: 11px; border: none;
-  cursor: pointer; background: var(--violet); color: #fff;
-  box-shadow: 0 0 32px var(--violet-glow), 0 4px 16px rgba(124,111,255,0.45);
-  transition: all 0.2s;
-  display: flex; align-items: center; gap: 8px; white-space: nowrap;
-  position: relative; overflow: hidden;
-}
-
-.btn-cta::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.14) 0%, transparent 60%);
-  pointer-events: none;
-}
-
-.btn-cta:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0 56px var(--violet-glow), 0 10px 28px rgba(124,111,255,0.55);
-  background: #9080ff;
-}
-
+.action-bar { display: none; position: sticky; bottom: 24px; z-index: 200; margin-top: 36px; }
+.action-inner { background: rgba(6,6,15,.9); backdrop-filter: blur(28px) saturate(1.5); border: 1px solid var(--rim-bright); border-radius: 16px; padding: 18px 24px; display: flex; align-items: center; gap: 18px; box-shadow: 0 28px 90px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.04), inset 0 1px 0 rgba(255,255,255,.06); flex-wrap: wrap; transition: background .3s, border-color .3s, box-shadow .3s; }
+.action-info { flex: 1; min-width: 160px; }
+.action-title { font-family: var(--serif); font-size: 17px; font-weight: 500; color: var(--text-primary); }
+.action-sub { font-family: var(--mono); font-size: 10.5px; font-weight: 500; color: var(--text-secondary); margin-top: 2px; }
+.btn-ghost { font-family: var(--sans); font-weight: 700; font-size: 12.5px; padding: 10px 20px; border-radius: 10px; border: 1px solid var(--rim); background: transparent; color: var(--text-secondary); cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.btn-ghost:hover { background: var(--surface); color: var(--text-primary); border-color: var(--rim-bright); }
+.btn-cta { font-family: var(--sans); font-weight: 800; font-size: 13.5px; padding: 12px 26px; border-radius: 10px; border: none; cursor: pointer; background: var(--violet); color: #fff; box-shadow: 0 0 28px var(--violet-glow), 0 4px 14px rgba(139,122,255,.4); transition: all .2s; display: flex; align-items: center; gap: 7px; white-space: nowrap; position: relative; overflow: hidden; letter-spacing: .02em; text-shadow: 0 1px 4px rgba(0,0,0,.2); }
+.btn-cta::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,.14) 0%, transparent 60%); pointer-events: none; }
+.btn-cta:hover { transform: translateY(-2px); box-shadow: 0 0 48px var(--violet-glow), 0 8px 24px rgba(139,122,255,.5); background: #9d8eff; }
 .btn-cta:active { transform: translateY(0); }
+.btn-cta:disabled { background: var(--raised); color: var(--ghost); box-shadow: none; cursor: not-allowed; transform: none; text-shadow: none; }
 
-.btn-cta:disabled {
-  background: var(--raised); color: var(--ghost);
-  box-shadow: none; cursor: not-allowed; transform: none;
-}
+/* ── LIGHTBOX ── */
+#lightbox { display: none; position: fixed; inset: 0; z-index: 7000; align-items: center; justify-content: center; flex-direction: column; gap: 10px; }
+#lightbox.active { display: flex; }
+.lightbox-backdrop { position: absolute; inset: 0; background: rgba(6,6,15,.95); backdrop-filter: blur(20px); cursor: pointer; transition: background .3s; }
+#lightboxImg { position: relative; z-index: 1; max-width: 92vw; max-height: 85vh; object-fit: contain; border-radius: 10px; box-shadow: 0 20px 80px rgba(0,0,0,.8); }
+.lightbox-info { position: relative; z-index: 1; font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--text-secondary); }
+.lightbox-close { position: fixed; top: 20px; right: 20px; z-index: 2; width: 36px; height: 36px; border-radius: 9px; background: rgba(255,123,92,.1); border: 1px solid rgba(255,123,92,.3); color: var(--coral); font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; }
+.lightbox-close:hover { background: rgba(255,123,92,.3); }
 
-/* ── PROGRESS ── */
-#progressOverlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(5,5,14,0.92); backdrop-filter: blur(20px);
-  z-index: 10000;
-  align-items: center; justify-content: center;
-  flex-direction: column; gap: 22px;
-}
-
-#progressOverlay.active { display: flex; }
-
-.prog-title {
-  font-family: var(--serif); font-size: 24px;
-  font-weight: 300; color: var(--ivory); letter-spacing: -0.015em;
-}
-
-.prog-title em { font-style: italic; color: var(--violet); }
-
-.prog-bar-wrap {
-  width: 340px; height: 3px;
-  background: var(--rim); border-radius: 2px; overflow: hidden;
-}
-
-.prog-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--violet), var(--mint));
-  border-radius: 2px;
-  transition: width 0.22s var(--ease);
-  box-shadow: 0 0 18px var(--violet-glow);
-}
-
-.prog-sub {
-  font-family: var(--mono); font-size: 11px;
-  color: var(--ghost); letter-spacing: 0.07em;
-}
-
-/* ── TOAST ── */
-#toast {
-  position: fixed; bottom: 116px; left: 50%;
-  transform: translateX(-50%) translateY(18px);
-  background: var(--overlay); border: 1px solid var(--rim-bright);
-  border-radius: 100px; padding: 12px 24px;
-  font-family: var(--mono); font-size: 12px; color: var(--ivory);
-  z-index: 9999; opacity: 0;
-  transition: all 0.3s var(--spring);
-  pointer-events: none; white-space: nowrap;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.55);
-}
-
-#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-#toast.toast-success { border-color: rgba(0,229,160,0.45); color: var(--mint); }
-#toast.toast-error   { border-color: rgba(255,107,71,0.45); color: var(--coral); }
+/* ── TWEAK MODAL ── */
+#tweakModal { display: none; position: fixed; inset: 0; z-index: 8000; align-items: center; justify-content: center; }
+#tweakModal.active { display: flex; }
+.tweak-backdrop { position: absolute; inset: 0; background: rgba(6,6,15,.92); backdrop-filter: blur(20px); transition: background .3s; }
+.tweak-panel { position: relative; z-index: 1; width: calc(100vw - 40px); max-width: 1200px; height: calc(100vh - 50px); max-height: 900px; background: var(--surface); border: 1px solid var(--rim-bright); border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 40px 120px rgba(0,0,0,.7); }
+.tweak-header { padding: 12px 20px; border-bottom: 1px solid var(--rim); display: flex; align-items: center; gap: 12px; background: var(--raised); flex-shrink: 0; }
+.tweak-title { font-family: var(--serif); font-size: 15px; font-weight: 500; color: var(--text-primary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tweak-title em { font-style: italic; color: var(--violet); }
+.tweak-close { width: 30px; height: 30px; border-radius: 7px; background: rgba(255,123,92,.08); border: 1px solid rgba(255,123,92,.2); color: var(--coral); font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.tweak-close:hover { background: rgba(255,123,92,.25); }
+.tweak-canvas-area { flex: 1; position: relative; overflow: hidden; background: repeating-conic-gradient(rgba(255,255,255,.02) 0% 25%, transparent 0% 50%) 0 0/20px 20px; display: flex; align-items: center; justify-content: center; min-height: 0; }
+.tweak-img-wrapper { position: relative; flex-shrink: 0; line-height: 0; }
+.tweak-img-wrapper > img { display: block; user-select: none; -webkit-user-drag: none; }
+.crop-box { position: absolute; border: 2px solid; cursor: move; z-index: 10; touch-action: none; }
+.crop-box.active-box { z-index: 20; }
+.crop-box-label { position: absolute; top: -18px; left: 0; font-family: var(--mono); font-size: 8px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; white-space: nowrap; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.crop-box-dims { position: absolute; bottom: -16px; left: 0; font-family: var(--mono); font-size: 7.5px; font-weight: 600; color: rgba(255,255,255,.75); white-space: nowrap; pointer-events: none; }
+.crop-handle { position: absolute; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 2px solid currentColor; z-index: 30; box-shadow: 0 0 6px rgba(0,0,0,.4); }
+.crop-handle.nw { top: -6px; left: -6px; cursor: nwse-resize; }
+.crop-handle.ne { top: -6px; right: -6px; cursor: nesw-resize; }
+.crop-handle.sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.crop-handle.se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+.tweak-footer { padding: 10px 20px; border-top: 1px solid var(--rim); display: flex; align-items: center; gap: 7px; background: var(--raised); flex-shrink: 0; flex-wrap: wrap; overflow-x: auto; }
+.tweak-profile-btn { font-family: var(--mono); font-size: 10px; font-weight: 700; padding: 5px 11px; border-radius: 6px; border: 2px solid; cursor: pointer; background: transparent; transition: all .15s; white-space: nowrap; }
+.tweak-profile-btn.sel { background: rgba(255,255,255,.1); }
+.tweak-reset-btn { margin-left: auto; font-family: var(--mono); font-size: 9px; font-weight: 600; padding: 5px 11px; border-radius: 6px; border: 1px solid var(--rim); background: var(--surface); color: var(--text-secondary); cursor: pointer; transition: all .15s; white-space: nowrap; }
+.tweak-reset-btn:hover { background: var(--coral-dim); border-color: var(--coral); color: var(--coral); }
 
 /* ── SCROLLBAR ── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: var(--void); }
 ::-webkit-scrollbar-thumb { background: var(--rim-bright); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--violet); }
 
+/* ── FOOTER ── */
+.site-footer { position: relative; z-index: 2; border-top: 1px solid var(--rim); background: linear-gradient(180deg, transparent, rgba(139,122,255,.022)); transition: border-color .3s; }
+.footer-inner { max-width: 1380px; margin: 0 auto; padding: 24px 40px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.footer-brand { display: flex; align-items: center; gap: 14px; }
+.footer-company { font-family: var(--serif); font-size: 15px; font-weight: 800; color: var(--text-primary); }
+.footer-divider { width: 1px; height: 14px; background: var(--rim-bright); flex-shrink: 0; }
+.footer-tool-name { font-family: var(--mono); font-size: 9px; font-weight: 500; color: var(--text-secondary); }
+.footer-credit { display: flex; align-items: center; gap: 8px; }
+.footer-credit-label { font-family: var(--mono); font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--text-tertiary); }
+.footer-author { font-family: var(--mono); font-size: 10px; font-weight: 700; color: var(--text-secondary); }
+
 /* ── RESPONSIVE ── */
 @media (max-width: 740px) {
-  .shell { padding: 0 20px 140px; }
+  .shell { padding: 0 16px 120px; }
   .config-grid { grid-template-columns: 1fr; }
   .upload-actions { grid-template-columns: 1fr 1fr; }
-  .upload-actions .ua-btn:nth-child(n) { border-right: none; }
+  .upload-actions .ua-btn { border-right: none; }
   .upload-actions .ua-btn:nth-child(odd) { border-right: 1px solid var(--rim); }
   .upload-actions .ua-btn:nth-child(n+3) { border-top: 1px solid var(--rim); }
-  #imageGrid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .image-grid { grid-template-columns: 1fr; }
   .action-inner { flex-direction: column; align-items: stretch; }
   .btn-cta { justify-content: center; }
   .masthead { flex-direction: column; align-items: flex-start; }
-}
-
-/* ── FOOTER ── */
-.site-footer {
-  position: relative;
-  z-index: 2;
-  border-top: 1px solid var(--rim);
-  background: linear-gradient(180deg, transparent, rgba(124,111,255,0.022));
-  margin-top: 0;
-}
-
-.footer-inner {
-  max-width: 1380px;
-  margin: 0 auto;
-  padding: 26px 40px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-
-.footer-brand {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.footer-company {
-  font-family: var(--serif);
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--ivory);
-  letter-spacing: -0.02em;
-}
-
-.footer-divider {
-  display: block;
-  width: 1px;
-  height: 16px;
-  background: var(--rim-bright);
-  flex-shrink: 0;
-}
-
-.footer-tool-name {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--muted);
-  letter-spacing: 0.07em;
-}
-
-.footer-credit {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.footer-credit-label {
-  font-family: var(--mono);
-  font-size: 9.5px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.13em;
-  color: var(--ghost);
-}
-
-.footer-author {
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--ivory-dim);
-  letter-spacing: 0.04em;
-}
-
-.footer-credit-label::after {
-  content: '·';
-  margin-left: 10px;
-  color: var(--rim-bright);
-}
-
-.footer-email {
-  font-family: var(--mono);
-  font-size: 10.5px;
-  color: var(--violet);
-  text-decoration: none;
-  opacity: 0.85;
-  transition: opacity 0.2s, color 0.2s;
-}
-
-.footer-email:hover {
-  opacity: 1;
-  color: #a898ff;
-}
-
-@media (max-width: 740px) {
+  .tab-bar { width: 100%; }
+  .tab-btn { flex: 1; justify-content: center; padding: 9px 10px; font-size: 10px; }
+  .profile-row { flex-direction: column; align-items: flex-start; }
   .footer-inner { flex-direction: column; align-items: flex-start; }
-  .footer-credit { justify-content: flex-start; }
 }
-
 </style>
+
 </head>
 <body>
-
-<!-- Aurora -->
-<div class="aurora" aria-hidden="true">
-  <div class="aurora-blob ab1"></div>
-  <div class="aurora-blob ab2"></div>
-  <div class="aurora-blob ab3"></div>
-</div>
-
-<!-- Full-page drop overlay -->
-<div id="pageDropOverlay">
-  <div class="pdo-back"></div>
-  <div class="pdo-box">
-    <span class="pdo-icon">📂</span>
-    <div class="pdo-title">Drop to <em>ingest</em></div>
-    <div class="pdo-sub">Release files, folders, or .zip archives to load them instantly</div>
-    <div class="pdo-count" id="dropCountLabel"></div>
-  </div>
-</div>
-
-<!-- Progress overlay -->
-<div id="progressOverlay">
-  <div class="prog-title" id="progressTitle">Packaging <em>archive</em>…</div>
-  <div class="prog-bar-wrap">
-    <div class="prog-bar-fill" id="progressBarFill" style="width:0%"></div>
-  </div>
-  <div class="prog-sub" id="progressSub">Preparing…</div>
-</div>
-
-<!-- Toast -->
+<div class="aurora" aria-hidden="true"><div class="aurora-blob ab1"></div><div class="aurora-blob ab2"></div><div class="aurora-blob ab3"></div></div>
+<div id="pageDropOverlay"><div class="pdo-back"></div><div class="pdo-box"><span class="pdo-icon">📂</span><div class="pdo-title">Drop to <em>ingest</em></div><div class="pdo-sub" id="pdoSub">Release files to load them</div><div class="pdo-count" id="dropCountLabel"></div></div></div>
+<div id="progressOverlay"><div class="prog-title" id="progressTitle">Working…</div><div class="prog-bar-wrap"><div class="prog-bar-fill" id="progressBarFill" style="width:0%"></div></div><div class="prog-sub" id="progressSub">Preparing…</div></div>
 <div id="toast" role="status"></div>
-
-<!-- Hidden file inputs -->
-<input type="file" id="fileInput" multiple accept="image/*"/>
-<input type="file" id="zipInput" accept=".zip,application/zip"/>
+<div id="lightbox"><div class="lightbox-backdrop" onclick="closeLightbox()"></div><img id="lightboxImg" src="" alt=""/><div class="lightbox-info" id="lightboxInfo"></div><button class="lightbox-close" onclick="closeLightbox()">✕</button></div>
+<div id="tweakModal"><div class="tweak-backdrop" onclick="C_closeTweak()"></div><div class="tweak-panel"><div class="tweak-header"><div class="tweak-title">Tweak — <em id="tweakFileName"></em></div><button class="tweak-close" onclick="C_closeTweak()">✕</button></div><div class="tweak-canvas-area" id="tweakCanvasArea"><div class="tweak-img-wrapper" id="tweakImgWrapper"><img id="tweakImg" src="" alt=""/></div></div><div class="tweak-footer" id="tweakFooter"><button class="tweak-reset-btn" onclick="C_resetOverrides()">↺ Reset</button></div></div></div>
+<input type="file" id="fileInput" class="hidden-input" multiple accept="image/*"/>
+<input type="file" id="zipInput" class="hidden-input" accept=".zip,application/zip"/>
 
 <div class="shell">
-
-  <!-- MASTHEAD -->
   <div class="masthead">
     <div class="masthead-left">
-      <div class="eyebrow">
-        <span class="eyebrow-dot"></span>
-        Serverless · Client-side only · No data leaves your device
-      </div>
-      <h1 class="masthead-title">Asset Renamer &amp;<br><em>Verification Pipeline</em></h1>
-      <p class="masthead-meta">Map messy render filenames to strict database naming conventions. AI makes a best guess; you confirm visually. No data corruption possible.</p>
+      <div class="eyebrow"><span class="eyebrow-dot"></span>Serverless · Client-side · Lossless</div>
+      <h1 class="masthead-title">Character Asset<br><em>Pipeline Suite</em></h1>
+      <p class="masthead-meta">Rename assets to strict conventions or auto-generate cropped variations — one shared workspace. No data leaves your device.</p>
     </div>
-    <div>
-      <div class="live-pill">
-        <span class="live-pill-dot"></span>
-        Offline-ready
-      </div>
+    <div class="masthead-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
+      <div class="live-pill"><span class="live-pill-dot"></span>Offline</div>
     </div>
   </div>
 
-  <!-- STEP 1 -->
+  <!-- SHARED CONFIG -->
   <div class="section">
-    <div class="section-head">
-      <div class="step-badge">01</div>
-      <div class="section-title">Global Variables</div>
-      <div class="section-sub">Applied to every output filename</div>
-    </div>
-    <div class="config-panel">
-      <div class="config-grid">
-        <div class="field">
-          <label class="field-label" for="charName">Character Name <span class="req">*</span></label>
-          <input id="charName" class="field-input" type="text" placeholder="e.g. Adrian" autocomplete="off" spellcheck="false"/>
-          <div class="field-hint">PascalCase recommended — e.g. Adrian, ElenaVoss</div>
-        </div>
-        <div class="field">
-          <label class="field-label" for="dressNum">Dress Number <span class="req">*</span></label>
-          <input id="dressNum" class="field-input" type="text" placeholder="e.g. D3" autocomplete="off" spellcheck="false"/>
-          <div class="field-hint">e.g. D1, D2, D3</div>
-        </div>
-        <div class="preview-row">
-          <span class="preview-lbl">Preview →</span>
-          <span id="previewText">[CharacterName]_[DressNumber]_FullBodyShot_[StandardizedAngle].png</span>
-        </div>
-      </div>
-    </div>
+    <div class="section-head"><div class="step-badge">CFG</div><div class="section-title">Shared Configuration</div><div class="section-sub">Applied across both tools</div></div>
+    <div class="config-panel"><div class="config-grid">
+      <div class="field"><label class="field-label">Character Name <span class="req">*</span></label><input id="s_charName" class="field-input" type="text" placeholder="auto-detected" autocomplete="off" spellcheck="false"/><div class="field-hint">Auto-extracted from filenames</div></div>
+      <div class="field"><label class="field-label">Dress / Outfit ID</label><input id="s_dressNum" class="field-input" type="text" placeholder="optional" autocomplete="off" spellcheck="false"/><div class="field-hint">e.g. D1, D2 — leave blank for datasets</div></div>
+      <div class="field" style="justify-content:center"><div class="toggle-row"><div class="mini-toggle on" id="dressToggle" onclick="toggleDress()"></div><span class="toggle-label" id="dressToggleLabel">Include dress in filenames</span></div><div class="field-hint" style="margin-top:8px">Turn off for datasets without outfit variants</div></div>
+      <div class="preview-row"><span class="preview-lbl">Renamer →</span><span class="preview-text" id="s_previewR"></span></div>
+      <div class="preview-row"><span class="preview-lbl">Crop →</span><span class="preview-text" id="s_previewC"></span></div>
+    </div></div>
   </div>
 
-  <!-- STEP 2 -->
-  <div class="section">
-    <div class="section-head">
-      <div class="step-badge">02</div>
-      <div class="section-title">Ingest Images</div>
-      <div class="section-sub">Files never leave your device</div>
-    </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('renamer')"><span class="tab-btn-icon">🏷</span>Asset Renamer</button>
+    <button class="tab-btn" onclick="switchTab('crop')"><span class="tab-btn-icon">✂️</span>Crop Generator</button>
+    <span class="sync-badge"><span class="sync-dot"></span>Images synced</span>
+  </div>
 
-    <div class="upload-zone" id="dropZone">
-      <div class="drop-hero">
-        <div class="drop-orb">🎞</div>
-        <div class="drop-headline">Drop renders <em>anywhere</em> on this page</div>
-        <p class="drop-sub">
-          Drag individual images or entire folders from your file manager directly onto the browser window.<br>
-          <strong>On Linux:</strong> drag from Nautilus, Nemo, Dolphin or any file manager — folder drag works perfectly.
-        </p>
-      </div>
-
-      <div class="upload-actions">
-        <button class="ua-btn" type="button" onclick="document.getElementById('fileInput').click()">
-          <span class="ua-icon">🖼</span>
-          <span class="ua-label">Browse Files</span>
-          <span class="ua-hint">Multi-select images<br>from a file picker</span>
-        </button>
-        <button class="ua-btn" type="button" onclick="document.getElementById('zipInput').click()">
-          <span class="ua-icon">📦</span>
-          <span class="ua-label">Upload ZIP</span>
-          <span class="ua-hint">Extract images from<br>a .zip archive</span>
-        </button>
-        <button class="ua-btn" type="button" onclick="triggerPasteHelp()">
-          <span class="ua-icon">📋</span>
-          <span class="ua-label">Paste Image</span>
-          <span class="ua-hint">Ctrl+V / ⌘+V<br>Screenshots included</span>
-        </button>
-        <button class="ua-btn" type="button" onclick="showFolderTip()">
-          <span class="ua-icon">📁</span>
-          <span class="ua-label">Drag a Folder</span>
-          <span class="ua-hint">Drag from Nautilus<br>Finder or Explorer</span>
-        </button>
-      </div>
-
-      <div class="tip-bar">
-        <span class="tip-icon">💡</span>
-        <span>Drop images, folders, or .zip archives — drag-and-drop works on Linux, macOS &amp; Windows</span>
-        <div class="format-chips">
-          <span class="chip">.png</span>
-          <span class="chip">.jpg</span>
-          <span class="chip">.webp</span>
-          <span class="chip">.zip</span>
-          <span class="chip">+more</span>
+  <!-- ═══ TAB A: RENAMER ═══ -->
+  <div class="tab-content active" id="tab_renamer">
+    <div class="section">
+      <div class="section-head"><div class="step-badge">01</div><div class="section-title">Ingest Images</div></div>
+      <div class="upload-zone" id="r_dropZone">
+        <div class="drop-hero"><div class="drop-orb">🎞</div><div class="drop-headline">Drop renders <em>anywhere</em></div><p class="drop-sub">Drag images, folders, or <strong>.zip archives</strong>. Images sync to Crop tool automatically.</p></div>
+        <div class="upload-actions">
+          <button class="ua-btn" onclick="$('fileInput').click()"><span class="ua-icon">🖼</span><span class="ua-label">Browse</span><span class="ua-hint">Multi-select</span></button>
+          <button class="ua-btn" onclick="$('zipInput').click()"><span class="ua-icon">📦</span><span class="ua-label">ZIP</span><span class="ua-hint">Extract images</span></button>
+          <button class="ua-btn" onclick="showToast('📋 Ctrl+V anywhere','')"><span class="ua-icon">📋</span><span class="ua-label">Paste</span><span class="ua-hint">Ctrl+V</span></button>
+          <button class="ua-btn" onclick="showToast('📁 Drag folder onto page','')"><span class="ua-icon">📁</span><span class="ua-label">Folder</span><span class="ua-hint">Drag & drop</span></button>
         </div>
+        <div class="tip-bar"><span class="tip-icon">💡</span><span>Images appear in both tools simultaneously</span><div class="format-chips"><span class="chip">.png</span><span class="chip">.jpg</span><span class="chip">.webp</span><span class="chip">.zip</span></div></div>
       </div>
+      <div class="add-more-strip" id="r_addMore"><div class="am-left"><div class="am-icon">➕</div><div><div class="am-title">Add more</div><div class="am-sub">Duplicates skipped</div></div></div><button class="am-btn" onclick="$('fileInput').click()">+ Browse</button></div>
     </div>
+    <div class="section grid-section" id="r_gridSection">
+      <div class="section-head"><div class="step-badge">02</div><div class="section-title">Verify Angles</div></div>
+      <div class="grid-toolbar"><div class="grid-tally"><strong id="r_count">0</strong><span>images</span></div><div class="conflict-pill" id="r_conflictBadge">⚠ <span id="r_conflictText"></span></div><div class="spacer"></div><button class="tbtn" onclick="S_clearAll()">✕ Clear all</button></div>
+      <div class="image-grid" id="r_grid"></div>
+    </div>
+    <div class="action-bar" id="r_actionBar"><div class="action-inner"><div class="action-info"><div class="action-title">Ready to export renamed files</div><div class="action-sub" id="r_summary"></div></div><button class="btn-ghost" onclick="S_clearAll()">↺ Start over</button><button class="btn-cta" id="r_exportBtn" onclick="R_export()">⬇ Generate Archive</button></div></div>
+  </div>
 
-    <!-- Add more strip -->
-    <div id="addMoreStrip">
-      <div class="am-left">
-        <div class="am-icon">➕</div>
-        <div>
-          <div class="am-title">Add more to this batch</div>
-          <div class="am-sub">New files appended · duplicates skipped automatically</div>
+  <!-- ═══ TAB B: CROP ═══ -->
+  <div class="tab-content" id="tab_crop">
+    <div class="section">
+      <div class="section-head"><div class="step-badge">01</div><div class="section-title">Shot Profiles</div><div class="section-sub">Crop regions</div></div>
+      <div class="config-panel">
+        <div class="config-grid">
+          <div class="field" style="grid-column:1/-1"><label class="field-label">Output Width</label><select id="c_targetRes" class="field-select" style="max-width:300px"><option value="0" selected>Original crop size (lossless)</option><option value="512">512 px</option><option value="768">768 px</option><option value="1024">1024 px</option><option value="2048">2048 px</option></select></div>
         </div>
+        <div class="profiles-section"><div class="profiles-header"><span class="profiles-header-title">Crop Profiles</span><div class="spacer"></div><button class="btn-sm" onclick="C_addProfile()">+ Add</button></div><div class="profile-list" id="c_profileList"></div></div>
       </div>
-      <button class="am-btn" type="button" onclick="document.getElementById('fileInput').click()">+ Browse Files</button>
     </div>
-  </div>
-
-  <!-- STEP 3 -->
-  <div class="section" id="gridSection">
-    <div class="section-head">
-      <div class="step-badge">03</div>
-      <div class="section-title">Verify Angle Assignments</div>
-      <div class="section-sub">Correct AI mismatches visually before export</div>
-    </div>
-
-    <div class="grid-toolbar">
-      <div class="grid-tally">
-        <strong id="fileCountNum">0</strong>
-        <span>images loaded</span>
+    <div class="section">
+      <div class="section-head"><div class="step-badge">02</div><div class="section-title">Ingest Full-Body Renders</div></div>
+      <div class="upload-zone" id="c_dropZone">
+        <div class="drop-hero"><div class="drop-orb">🎞</div><div class="drop-headline">Drop renders <em>anywhere</em></div><p class="drop-sub">High-res full-body renders. Auto-generates crops per profile. Synced with Renamer.</p></div>
+        <div class="upload-actions">
+          <button class="ua-btn" onclick="$('fileInput').click()"><span class="ua-icon">🖼</span><span class="ua-label">Browse</span><span class="ua-hint">Multi-select</span></button>
+          <button class="ua-btn" onclick="$('zipInput').click()"><span class="ua-icon">📦</span><span class="ua-label">ZIP</span><span class="ua-hint">Extract</span></button>
+          <button class="ua-btn" onclick="showToast('📋 Ctrl+V','')"><span class="ua-icon">📋</span><span class="ua-label">Paste</span><span class="ua-hint">Ctrl+V</span></button>
+          <button class="ua-btn" onclick="showToast('📁 Drag folder','')"><span class="ua-icon">📁</span><span class="ua-label">Folder</span><span class="ua-hint">Drag</span></button>
+        </div>
+        <div class="tip-bar"><span class="tip-icon">💡</span><span>Each image generates one output per enabled profile</span></div>
       </div>
-      <div class="conflict-pill" id="conflictBadge">
-        ⚠ <span id="conflictText">conflicts detected</span>
-      </div>
-      <div class="spacer"></div>
-      <button class="tbtn" onclick="clearAll()">✕ Clear all</button>
+      <div class="add-more-strip" id="c_addMore"><div class="am-left"><div class="am-icon">➕</div><div><div class="am-title">Add more</div><div class="am-sub">Duplicates skipped</div></div></div><button class="am-btn" onclick="$('fileInput').click()">+ Browse</button></div>
     </div>
-
-    <div id="imageGrid"></div>
+    <div class="section grid-section" id="c_gridSection">
+      <div class="section-head"><div class="step-badge">03</div><div class="section-title">Verify &amp; Tweak</div></div>
+      <div class="grid-toolbar"><div class="grid-tally"><strong id="c_count">0</strong><span>images</span></div><div class="spacer"></div><button class="tbtn" onclick="S_clearAll()">✕ Clear all</button></div>
+      <div class="image-grid" id="c_grid"></div>
+    </div>
+    <div class="action-bar" id="c_actionBar"><div class="action-inner"><div class="action-info"><div class="action-title">Ready to generate crops</div><div class="action-sub" id="c_summary"></div></div><button class="btn-ghost" onclick="S_clearAll()">↺ Start over</button><button class="btn-cta" id="c_exportBtn" onclick="C_export()">⬇ Generate Archive</button></div></div>
   </div>
+</div>
 
-  <!-- ACTION BAR -->
-  <div id="actionBar">
-    <div class="action-inner">
-      <div class="action-info">
-        <div class="action-title">Ready to export</div>
-        <div class="action-sub" id="exportSummary">Verify all angles before generating</div>
-      </div>
-      <button class="btn-ghost" onclick="clearAll()">↺ Start over</button>
-      <button class="btn-cta" id="generateBtn" onclick="generateZip()">⬇ Generate Archive</button>
-    </div>
-  </div>
-
-</div><!-- /shell -->
-
-<!-- Footer -->
-<footer class="site-footer">
-  <div class="footer-inner">
-    <div class="footer-brand">
-      <span class="footer-company">Dashverse</span>
-      <span class="footer-divider"></span>
-      <span class="footer-tool-name">Asset Renamer &amp; Verification Pipeline v2.1</span>
-    </div>
-    <div class="footer-credit">
-      <span class="footer-credit-label">Tool created by</span>
-      <span class="footer-author">Soumya Deepta Sarkar</span>
-    </div>
-  </div>
-</footer>
+<footer class="site-footer"><div class="footer-inner"><div class="footer-brand"><span class="footer-company">Dashverse</span><span class="footer-divider"></span><span class="footer-tool-name">Character Asset Pipeline Suite v4.0</span></div><div class="footer-credit"><span class="footer-credit-label">by</span><span class="footer-author">Soumya Deepta Sarkar</span></div></div></footer>
 
 <script>
 'use strict';
+const $=id=>document.getElementById(id);
 
-// ════════════════════════════════════════════
-//  CONSTANTS — EXPANDED ANGLE OPTIONS
-// ════════════════════════════════════════════
-const ANGLE_GROUPS = {
-  'Full Body Angles': [
-    'FrontAngle',
-    'BackAngle',
-    'FrontThreeQuarterLeftAngle',
-    'FrontThreeQuarterRightAngle',
-    'BackThreeQuarterLeftAngle',
-    'BackThreeQuarterRightAngle',
-  ],
-  'Full Body Side Angles': [
-    'SideLeftAngle',
-    'SideRightAngle',
-  ],
-  'Mid Body Shots': [
-    'MidBodyFront',
-    'MidBodyBack',
-    'MidBodyThreeQuarterLeft',
-    'MidBodyThreeQuarterRight',
-    'MidBodySideLeft',
-    'MidBodySideRight',
-  ],
-  'Close-Up Shots': [
-    'CloseUpFront',
-    'CloseUpBack',
-    'CloseUpThreeQuarterLeft',
-    'CloseUpThreeQuarterRight',
-    'CloseUpSideLeft',
-    'CloseUpSideRight',
-  ],
-  'Custom': [
-    '__custom__',
-  ],
-};
+/* ═══════════════════════════════════════
+   CONSTANTS
+   ═══════════════════════════════════════ */
+const IMG_TYPES=new Set(['image/png','image/jpeg','image/jpg','image/webp','image/gif','image/tiff','image/bmp','image/avif']);
+const IMG_EXT=/\.(png|jpe?g|webp|gif|tiff?|bmp|avif)$/i;
+const PROFILE_COLORS=['#7c6fff','#00e5a0','#ff6b47','#ffb347','#47b3ff','#ff47b3','#b347ff','#47ffb3'];
+const ASPECT_OPTS=[{v:.5625,l:'9:16'},{v:.6667,l:'2:3'},{v:.75,l:'3:4'},{v:1,l:'1:1'},{v:1.3333,l:'4:3'},{v:1.7778,l:'16:9'},{v:0,l:'Free'}];
 
-// Flat list for validation
-const ALL_ANGLES = Object.values(ANGLE_GROUPS).flat();
+// Keywords NOT part of character names
+const KW=new Set('fullbodyshot,midbody,midbodyfront,midbodyback,portrait,closeup,closeupfront,front,back,side,left,right,frontangle,backangle,sideleftangle,siderightangle,frontthreequarterleftangle,frontthreequarterrightangle,backthreequarterleftangle,backthreequarterrightangle,render,renders,view,shot,angle,turn,turnaround,full,body,mid,close,upper,lower,half,profile,iteration,iter,pass,version,ver,rig,char,character,final,test,wip,lateral,diagonal,oblique,quarter,forward,anterior,posterior,rear,fwd,bk,three,torso,waist,head,face,bust,shoulder,silhouette,headshot,image,img,pic,photo,fullbody,upperbody'.split(','));
 
-const IMAGE_TYPES = new Set([
-  'image/png','image/jpeg','image/jpg','image/webp',
-  'image/gif','image/tiff','image/bmp','image/avif','image/heic',
-]);
+const R_ANGLES={'Full Body':['FrontAngle','BackAngle','FrontThreeQuarterLeftAngle','FrontThreeQuarterRightAngle','BackThreeQuarterLeftAngle','BackThreeQuarterRightAngle'],'Side':['SideLeftAngle','SideRightAngle'],'Mid Body':['MidBodyFront','MidBodyBack','MidBodyThreeQuarterLeft','MidBodyThreeQuarterRight','MidBodySideLeft','MidBodySideRight'],'Close-Up':['CloseUpFront','CloseUpBack','CloseUpThreeQuarterLeft','CloseUpThreeQuarterRight','CloseUpSideLeft','CloseUpSideRight'],'Custom':['__custom__']};
+const C_ANGLES={'Full Body':['FrontAngle','BackAngle','FrontThreeQuarterLeftAngle','FrontThreeQuarterRightAngle','BackThreeQuarterLeftAngle','BackThreeQuarterRightAngle'],'Side':['SideLeftAngle','SideRightAngle'],'Custom':['__custom__']};
 
-// ════════════════════════════════════════════
-//  STATE
-// ════════════════════════════════════════════
-let images = [];
+/* ═══════════════════════════════════════
+   SHARED STATE
+   ═══════════════════════════════════════ */
+let activeTab='renamer', includeDress=true, isDark=true;
+/** @type {Array<{file:File,objectURL:string,originalName:string,natW:number,natH:number,r_angle:string,r_customAngle:string,r_conf:string,c_angle:string,c_customAngle:string,c_conf:string,c_overrides:Object}>} */
+let S_images=[];
+let C_pid=0;
+let C_profiles=[
+  {id:'cp'+(++C_pid),name:'Portrait',enabled:true,widthPct:45,xPct:50,yPct:0,aspect:.5625,heightPct:45,color:PROFILE_COLORS[0]},
+  {id:'cp'+(++C_pid),name:'MidBody',enabled:true,widthPct:75,xPct:50,yPct:0,aspect:.5625,heightPct:75,color:PROFILE_COLORS[1]},
+];
+let C_tweakIdx=null,C_tweakPid=null,C_tweakScale=1;
+let C_drag={on:false,mode:'',corner:'',pid:'',sx:0,sy:0,sc:null};
 
-// ════════════════════════════════════════════
-//  INTELLIGENT ANGLE PARSER — EXPANDED
-// ════════════════════════════════════════════
-function parseAngle(filename) {
-  const n = filename.toLowerCase()
-    .replace(/\.[^.]+$/, '')
-    .replace(/[-_.]+/g, ' ')
-    .replace(/\b(iteration|iter|v\d*|ver|version|pass|render|shot|view|turn|turnaround|rig|char|character|body|angle)\b/g, ' ')
-    .replace(/\s+/g, ' ').trim();
+/* ═══════════════════════════════════════
+   FILENAME PARSER (improved)
+   ═══════════════════════════════════════ */
+function parseFilename(filename){
+  const base=filename.replace(/\.[^.]+$/,'');
+  // Primary: split on underscore
+  let tokens=base.split('_');
+  // If only 1 token, try hyphen then space
+  if(tokens.length===1)tokens=base.split('-');
+  if(tokens.length===1)tokens=base.split(/\s+/);
 
-  const has = (...words) => words.some(w => n.includes(w));
+  let dress='',dressIdx=-1,nameTokens=[];
 
-  // Shot type detection
-  const isCloseUp = has('close', 'closeup', 'close-up', 'headshot', 'portrait', 'face', 'head', 'bust', 'shoulder');
-  const isMidBody = has('mid', 'midbody', 'mid-body', 'torso', 'waist', 'upper', 'upperbody', 'half');
-  const isSide    = has('side', 'profile', 'lateral', 'silhouette');
-
-  // Direction detection
-  const isBack  = has('back', 'rear', 'posterior', 'bk', 'behind');
-  const isFront = has('front', 'forward', 'anterior', 'fwd', 'fr', 'face');
-  const is3Q    = has('quarter', '3q', '3/4', 'diagonal', 'oblique', 'angled', 'qtr', 'three');
-  const isLeft  = has('left', 'lft', 'l ');
-  const isRight = has('right', 'rgt', 'r ');
-
-  let angle, confidence;
-
-  // ─── Close-up shots ───
-  if (isCloseUp) {
-    if (isSide && isLeft)         { angle = 'CloseUpSideLeft';          confidence = 'high'; }
-    else if (isSide && isRight)   { angle = 'CloseUpSideRight';         confidence = 'high'; }
-    else if (isSide)              { angle = 'CloseUpSideLeft';          confidence = 'med';  }
-    else if (is3Q && isLeft)      { angle = 'CloseUpThreeQuarterLeft';  confidence = 'high'; }
-    else if (is3Q && isRight)     { angle = 'CloseUpThreeQuarterRight'; confidence = 'high'; }
-    else if (isBack)              { angle = 'CloseUpBack';              confidence = 'high'; }
-    else if (is3Q)                { angle = 'CloseUpThreeQuarterLeft';  confidence = 'med';  }
-    else                          { angle = 'CloseUpFront';             confidence = 'high'; }
-  }
-  // ─── Mid-body shots ───
-  else if (isMidBody) {
-    if (isSide && isLeft)         { angle = 'MidBodySideLeft';          confidence = 'high'; }
-    else if (isSide && isRight)   { angle = 'MidBodySideRight';         confidence = 'high'; }
-    else if (isSide)              { angle = 'MidBodySideLeft';          confidence = 'med';  }
-    else if (is3Q && isLeft)      { angle = 'MidBodyThreeQuarterLeft';  confidence = 'high'; }
-    else if (is3Q && isRight)     { angle = 'MidBodyThreeQuarterRight'; confidence = 'high'; }
-    else if (isBack)              { angle = 'MidBodyBack';              confidence = 'high'; }
-    else if (is3Q)                { angle = 'MidBodyThreeQuarterLeft';  confidence = 'med';  }
-    else                          { angle = 'MidBodyFront';             confidence = 'high'; }
-  }
-  // ─── Full-body side profile shots ───
-  else if (isSide) {
-    if (isLeft)       { angle = 'SideLeftAngle';  confidence = 'high'; }
-    else if (isRight) { angle = 'SideRightAngle'; confidence = 'high'; }
-    else              { angle = 'SideLeftAngle';  confidence = 'med';  }
-  }
-  // ─── Full-body angles (original logic) ───
-  else if (isBack && is3Q && isLeft)   { angle = 'BackThreeQuarterLeftAngle';   confidence = 'high'; }
-  else if (isBack && is3Q && isRight)  { angle = 'BackThreeQuarterRightAngle';  confidence = 'high'; }
-  else if (isFront && is3Q && isLeft)  { angle = 'FrontThreeQuarterLeftAngle';  confidence = 'high'; }
-  else if (isFront && is3Q && isRight) { angle = 'FrontThreeQuarterRightAngle'; confidence = 'high'; }
-  else if (isBack && is3Q)             { angle = 'BackThreeQuarterLeftAngle';   confidence = 'med';  }
-  else if (isFront && is3Q)            { angle = 'FrontThreeQuarterLeftAngle';  confidence = 'med';  }
-  else if (is3Q && isLeft)             { angle = 'FrontThreeQuarterLeftAngle';  confidence = 'med';  }
-  else if (is3Q && isRight)            { angle = 'FrontThreeQuarterRightAngle'; confidence = 'med';  }
-  else if (isBack)                     { angle = 'BackAngle';                   confidence = 'high'; }
-  else if (isFront)                    { angle = 'FrontAngle';                  confidence = 'high'; }
-  else if (is3Q)                       { angle = 'FrontThreeQuarterLeftAngle';  confidence = 'low';  }
-  else                                 { angle = 'FrontAngle';                  confidence = 'low';  }
-
-  return { angle, confidence };
-}
-
-// ════════════════════════════════════════════
-//  PREVIEW
-// ════════════════════════════════════════════
-const charInput  = document.getElementById('charName');
-const dressInput = document.getElementById('dressNum');
-
-function getChar()  { return charInput.value.trim()  || 'Character'; }
-function getDress() { return dressInput.value.trim() || 'D0'; }
-
-function getEffectiveAngle(img) {
-  if (img.guessedAngle === '__custom__') {
-    return img.customAngle || 'CustomAngle';
-  }
-  return img.guessedAngle;
-}
-
-function buildOutputName(img) {
-  const angle = getEffectiveAngle(img);
-  return `${getChar()}_${getDress()}_FullBodyShot_${angle}.png`;
-}
-
-function updatePreview() {
-  const c = charInput.value.trim()  || '[CharacterName]';
-  const d = dressInput.value.trim() || '[DressNumber]';
-  document.getElementById('previewText').textContent = `${c}_${d}_FullBodyShot_[StandardizedAngle].png`;
-  images.forEach((_, i) => updateCardOutput(i));
-}
-
-charInput.addEventListener('input',  updatePreview);
-dressInput.addEventListener('input', updatePreview);
-
-// ════════════════════════════════════════════
-//  UPLOAD ENGINE
-// ════════════════════════════════════════════
-
-// File picker input
-document.getElementById('fileInput').addEventListener('change', e => {
-  ingestFiles(Array.from(e.target.files));
-  e.target.value = '';
-});
-
-// Clipboard paste
-document.addEventListener('paste', e => {
-  const imgs = Array.from(e.clipboardData?.items || [])
-    .filter(i => i.kind === 'file' && IMAGE_TYPES.has(i.type))
-    .map(i => i.getAsFile()).filter(Boolean);
-  if (!imgs.length) return;
-  e.preventDefault();
-  ingestFiles(imgs);
-});
-
-function triggerPasteHelp() {
-  showToast('📋 Press Ctrl+V / ⌘+V anywhere — works for screenshots too', '');
-}
-
-function showFolderTip() {
-  showToast('📁 Drag a folder from your file manager directly onto this page', '');
-}
-
-// ── Full-page drag-and-drop ─────────────────
-const pageOverlay = document.getElementById('pageDropOverlay');
-const dropCountEl = document.getElementById('dropCountLabel');
-const dropZoneEl  = document.getElementById('dropZone');
-let _vis = false;
-
-function showPDO(n) {
-  if (_vis) return; _vis = true;
-  dropCountEl.textContent = n > 0 ? `${n} item${n>1?'s':''} ready to drop` : '';
-  pageOverlay.classList.add('active');
-  dropZoneEl.classList.add('drag-active');
-}
-
-function hidePDO() {
-  if (!_vis) return; _vis = false;
-  pageOverlay.classList.remove('active');
-  dropZoneEl.classList.remove('drag-active');
-}
-
-window.addEventListener('dragenter', e => {
-  e.preventDefault();
-  showPDO(e.dataTransfer?.items?.length || 0);
-}, false);
-
-window.addEventListener('dragover', e => {
-  e.preventDefault();
-  if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-  if (!_vis) showPDO(0);
-}, false);
-
-window.addEventListener('dragleave', e => {
-  if (e.relatedTarget === null) hidePDO();
-}, false);
-
-window.addEventListener('drop', e => {
-  e.preventDefault();
-  hidePDO();
-  const files = Array.from(e.dataTransfer?.files || []);
-  if (!files.length) return;
-
-  const zips = files.filter(f => f.name.toLowerCase().endsWith('.zip') || f.type === 'application/zip');
-  const nonZips = files.filter(f => !f.name.toLowerCase().endsWith('.zip') && f.type !== 'application/zip');
-
-  if (zips.length) zips.forEach(z => ingestZip(z));
-  if (nonZips.length) ingestFiles(nonZips);
-}, false);
-
-// ── Core ingest ─────────────────────────────
-function ingestFiles(rawFiles) {
-  const imgs = Array.from(rawFiles).filter(f =>
-    IMAGE_TYPES.has(f.type) ||
-    /\.(png|jpe?g|webp|gif|tiff?|bmp|avif|heic)$/i.test(f.name)
-  );
-
-  if (!imgs.length) {
-    showToast('⚠ No image files found in selection', 'error');
-    return;
+  // Pass 1: find dress token (D followed by digits)
+  for(let i=0;i<tokens.length;i++){
+    if(/^[Dd]\d+$/.test(tokens[i])){dress=tokens[i].toUpperCase();dressIdx=i;break;}
+    // Also match "Dress3" or "outfit2" style
+    const dm=tokens[i].match(/^(?:dress|outfit)(\d+)$/i);
+    if(dm){dress='D'+dm[1];dressIdx=i;break;}
   }
 
-  const seen = new Set(images.filter(Boolean).map(i => `${i.originalName}:::${i.file.size}`));
-  const fresh = imgs.filter(f => {
-    const k = `${f.name}:::${f.size}`;
-    if (seen.has(k)) return false;
-    seen.add(k); return true;
-  });
-
-  const skipped = imgs.length - fresh.length;
-
-  if (!fresh.length) {
-    showToast(`⚠ All ${imgs.length} file${imgs.length>1?'s':''} already loaded`, 'error');
-    return;
+  // Pass 2: collect name tokens (before dress or before first keyword)
+  const stopAt=dressIdx>=0?dressIdx:tokens.length;
+  for(let i=0;i<stopAt;i++){
+    const t=tokens[i],lo=t.toLowerCase();
+    if(/^\d+$/.test(t))break; // pure number
+    if(/^[Vv]\d+$/.test(t))break; // version
+    if(KW.has(lo))break; // keyword
+    nameTokens.push(t);
   }
 
-  const frag = document.createDocumentFragment();
-  fresh.forEach(file => {
-    const objectURL = URL.createObjectURL(file);
-    const { angle, confidence } = parseAngle(file.name);
-    images.push({
-      file,
-      objectURL,
-      originalName: file.name,
-      guessedAngle: angle,
-      customAngle: '',
-      confidence
-    });
-    frag.appendChild(buildCard(images.length - 1));
-  });
-
-  document.getElementById('imageGrid').appendChild(frag);
-  updateUI();
-
-  const msg = skipped > 0
-    ? `✓ ${fresh.length} loaded · ${skipped} duplicate${skipped>1?'s':''} skipped`
-    : `✓ ${fresh.length} image${fresh.length>1?'s':''} loaded`;
-  showToast(msg, 'success');
-
-  setTimeout(() => {
-    document.getElementById('gridSection')?.scrollIntoView({ behavior:'smooth', block:'start' });
-  }, 80);
-}
-
-// ════════════════════════════════════════════
-//  CARD BUILDER — WITH CUSTOM ANGLE INPUT
-// ════════════════════════════════════════════
-function buildCard(index) {
-  const img  = images[index];
-  const card = document.createElement('div');
-  card.className = 'img-card';
-  card.dataset.index = index;
-  card.style.animationDelay = `${(index % 20) * 0.04}s`;
-
-  const confLabel = { high:'HIGH CONF', med:'MED CONF', low:'GUESSED', custom:'CUSTOM' };
-  const confClass = { high:'conf-high',  med:'conf-med',  low:'conf-low', custom:'conf-custom' };
-
-  const isCustom = img.guessedAngle === '__custom__';
-  const currentConf = isCustom ? 'custom' : img.confidence;
-
-  // Build optgroups for the select
-  let optsHtml = '';
-  for (const [groupName, angles] of Object.entries(ANGLE_GROUPS)) {
-    optsHtml += `<optgroup label="${groupName}">`;
-    for (const a of angles) {
-      const displayName = a === '__custom__' ? '✎ Custom (enter below)' : a;
-      const selected = a === img.guessedAngle ? ' selected' : '';
-      optsHtml += `<option value="${a}"${selected}>${displayName}</option>`;
+  // If dress came first (D3_Adrian_...), scan after dress for name
+  if(dressIdx===0&&nameTokens.length===0){
+    for(let i=1;i<tokens.length;i++){
+      const t=tokens[i],lo=t.toLowerCase();
+      if(/^\d+$/.test(t)||/^[Vv]\d+$/.test(t)||KW.has(lo)||/^[Dd]\d+$/.test(t))break;
+      nameTokens.push(t);
     }
-    optsHtml += '</optgroup>';
   }
 
-  card.innerHTML = `
-    <div class="card-chrome">
-      <span class="card-idx">#${String(index+1).padStart(2,'0')}</span>
-      <span class="conf-tag ${confClass[currentConf]}" id="confTag_${index}">${confLabel[currentConf]}</span>
-      <div class="card-chrome-actions">
-        <button class="card-dl" title="Download this image" onclick="downloadSingle(${index})">⬇</button>
-        <button class="card-del" title="Remove" onclick="removeCard(${index})">✕</button>
-      </div>
-    </div>
-    <div class="card-thumb">
-      <img src="${img.objectURL}" alt="${img.originalName}" loading="lazy"/>
-    </div>
-    <div class="card-body">
-      <div class="card-fname" title="${img.originalName}">${img.originalName}</div>
-      <div>
-        <div class="angle-lbl">Standardized Angle</div>
-        <select class="angle-select" id="angleSelect_${index}" onchange="onAngleChange(${index},this.value)">${optsHtml}</select>
-        <div class="custom-angle-wrap ${isCustom ? 'visible' : ''}" id="customWrap_${index}">
-          <input 
-            type="text" 
-            class="custom-angle-input" 
-            id="customInput_${index}"
-            placeholder="Enter custom angle name (e.g. TopDownView)"
-            value="${img.customAngle || ''}"
-            oninput="onCustomAngleInput(${index}, this.value)"
-            spellcheck="false"
-          />
-          <div class="custom-hint">Use PascalCase, no spaces. Will appear in filename.</div>
-        </div>
-      </div>
-      <div class="card-out" id="cardOutput_${index}">${buildOutputName(img)}</div>
-    </div>
-  `;
+  // Capitalize each token, preserve underscores
+  const name=nameTokens.filter(t=>t.length>0).map(t=>t.charAt(0).toUpperCase()+t.slice(1)).join('_');
+  return{name,dress};
+}
 
+/* ═══════════════════════════════════════
+   ANGLE PARSERS
+   ═══════════════════════════════════════ */
+function R_parseAngle(fn){
+  const n=fn.toLowerCase().replace(/\.[^.]+$/,'').replace(/[-_.]+/g,' ').replace(/\b(iteration|iter|v\d*|ver|version|pass|render|shot|view|turn|turnaround|rig|char|character|body|angle)\b/g,' ').replace(/\s+/g,' ').trim();
+  const h=(...w)=>w.some(x=>n.includes(x));
+  const isCU=h('close','closeup','headshot','portrait','face','head','bust','shoulder');
+  const isMB=h('mid','midbody','torso','waist','upper','upperbody','half');
+  const isSi=h('side','profile','lateral');
+  const isBk=h('back','rear','posterior','bk','behind'),isFr=h('front','forward','anterior','fwd','fr');
+  const is3Q=h('quarter','3q','3/4','diagonal','oblique','qtr','three');
+  const isL=h('left','lft'),isR=h('right','rgt');
+  let a,c;
+  if(isCU){if(isSi&&isL){a='CloseUpSideLeft';c='high';}else if(isSi&&isR){a='CloseUpSideRight';c='high';}else if(isSi){a='CloseUpSideLeft';c='med';}else if(is3Q&&isL){a='CloseUpThreeQuarterLeft';c='high';}else if(is3Q&&isR){a='CloseUpThreeQuarterRight';c='high';}else if(isBk){a='CloseUpBack';c='high';}else{a='CloseUpFront';c='high';}}
+  else if(isMB){if(isSi&&isL){a='MidBodySideLeft';c='high';}else if(isSi&&isR){a='MidBodySideRight';c='high';}else if(isSi){a='MidBodySideLeft';c='med';}else if(is3Q&&isL){a='MidBodyThreeQuarterLeft';c='high';}else if(is3Q&&isR){a='MidBodyThreeQuarterRight';c='high';}else if(isBk){a='MidBodyBack';c='high';}else{a='MidBodyFront';c='high';}}
+  else if(isSi){a=isR?'SideRightAngle':'SideLeftAngle';c=(isL||isR)?'high':'med';}
+  else if(isBk&&is3Q&&isL){a='BackThreeQuarterLeftAngle';c='high';}else if(isBk&&is3Q&&isR){a='BackThreeQuarterRightAngle';c='high';}
+  else if(isFr&&is3Q&&isL){a='FrontThreeQuarterLeftAngle';c='high';}else if(isFr&&is3Q&&isR){a='FrontThreeQuarterRightAngle';c='high';}
+  else if(isBk&&is3Q){a='BackThreeQuarterLeftAngle';c='med';}else if(isFr&&is3Q){a='FrontThreeQuarterLeftAngle';c='med';}
+  else if(isBk){a='BackAngle';c='high';}else if(isFr){a='FrontAngle';c='high';}
+  else{a='FrontAngle';c='low';}
+  return{angle:a,confidence:c};
+}
+
+function C_parseAngle(fn){
+  const n=fn.toLowerCase().replace(/\.[^.]+$/,'').replace(/[-_.]+/g,' ').replace(/\s+/g,' ').trim();
+  const h=(...w)=>w.some(x=>n.includes(x));
+  const isSi=h('side','profile','lateral'),isBk=h('back','rear','bk','behind'),isFr=h('front','forward','fwd','fr');
+  const is3Q=h('quarter','3q','3/4','oblique','qtr','three'),isL=h('left','lft'),isR=h('right','rgt');
+  let a,c;
+  if(isSi){a=isR?'SideRightAngle':'SideLeftAngle';c=(isL||isR)?'high':'med';}
+  else if(isBk&&is3Q&&isL){a='BackThreeQuarterLeftAngle';c='high';}else if(isBk&&is3Q&&isR){a='BackThreeQuarterRightAngle';c='high';}
+  else if(isFr&&is3Q&&isL){a='FrontThreeQuarterLeftAngle';c='high';}else if(isFr&&is3Q&&isR){a='FrontThreeQuarterRightAngle';c='high';}
+  else if(isBk&&is3Q){a='BackThreeQuarterLeftAngle';c='med';}else if(isFr&&is3Q){a='FrontThreeQuarterLeftAngle';c='med';}
+  else if(isBk){a='BackAngle';c='high';}else if(isFr){a='FrontAngle';c='high';}
+  else{a='FrontAngle';c='low';}
+  return{angle:a,confidence:c};
+}
+
+/* ═══════════════════════════════════════
+   SHARED UTILITIES
+   ═══════════════════════════════════════ */
+let _tt=null;
+function showToast(m,t=''){const e=$('toast');e.textContent=m;e.className=`show${t?' toast-'+t:''}`;clearTimeout(_tt);_tt=setTimeout(()=>e.classList.remove('show'),3200);}
+function loadImg(u){return new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=j;i.src=u;});}
+function openLightbox(u,info){$('lightboxImg').src=u;$('lightboxInfo').textContent=info;$('lightbox').classList.add('active');}
+function closeLightbox(){$('lightbox').classList.remove('active');}
+
+function getChar(){return $('s_charName').value.trim()||'Character';}
+function getDressStr(){
+  if(!includeDress)return '';
+  const d=$('s_dressNum').value.trim();
+  return d?'_'+d:'';
+}
+function R_getAngle(img){return img.r_angle==='__custom__'?(img.r_customAngle||'CustomAngle'):img.r_angle;}
+function C_getAngle(img){return img.c_angle==='__custom__'?(img.c_customAngle||'CustomAngle'):img.c_angle;}
+function R_buildName(img){return `${getChar()}${getDressStr()}_FullBodyShot_${R_getAngle(img)}.png`;}
+function C_buildName(img,p){return `${getChar()}${getDressStr()}_${p.name}_${C_getAngle(img)}.png`;}
+
+function updatePreviews(){
+  const c=getChar(),d=getDressStr();
+  $('s_previewR').textContent=`${c}${d}_FullBodyShot_[Angle].png`;
+  const pn=C_profiles.filter(p=>p.enabled).map(p=>p.name).join('|')||'Profile';
+  $('s_previewC').textContent=`${c}${d}_{${pn}}_[Angle].png`;
+}
+
+$('s_charName').addEventListener('input',()=>{updatePreviews();R_refreshOutputs();C_refreshOutputs();});
+$('s_dressNum').addEventListener('input',()=>{updatePreviews();R_refreshOutputs();C_refreshOutputs();});
+
+/* ═══════════════════════════════════════
+   THEME & TOGGLES
+   ═══════════════════════════════════════ */
+function toggleTheme(){
+  isDark=!isDark;
+  document.body.classList.toggle('light',!isDark);
+  $('themeToggle').textContent=isDark?'🌙':'☀️';
+  try{localStorage.setItem('theme',isDark?'dark':'light');}catch(e){}
+}
+function toggleDress(){
+  includeDress=!includeDress;
+  $('dressToggle').classList.toggle('on',includeDress);
+  $('dressToggleLabel').textContent=includeDress?'Include dress in filenames':'Dress excluded from filenames';
+  updatePreviews();R_refreshOutputs();C_refreshOutputs();
+}
+function switchTab(t){activeTab=t;document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',(i===0&&t==='renamer')||(i===1&&t==='crop')));$('tab_renamer').classList.toggle('active',t==='renamer');$('tab_crop').classList.toggle('active',t==='crop');}
+
+// Restore theme
+try{if(localStorage.getItem('theme')==='light'){isDark=false;document.body.classList.add('light');$('themeToggle').textContent='☀️';}}catch(e){}
+
+/* ═══════════════════════════════════════
+   SHARED IMAGE MANAGEMENT
+   ═══════════════════════════════════════ */
+function loadDims(file){return new Promise((r,j)=>{const u=URL.createObjectURL(file);const i=new Image();i.onload=()=>r({w:i.naturalWidth,h:i.naturalHeight,url:u});i.onerror=()=>{URL.revokeObjectURL(u);j();};i.src=u;});}
+
+async function S_ingestFiles(rawFiles){
+  const imgs=rawFiles.filter(f=>IMG_TYPES.has(f.type)||IMG_EXT.test(f.name));
+  if(!imgs.length){showToast('⚠ No images found','error');return;}
+  const seen=new Set(S_images.map(i=>`${i.originalName}:::${i.file.size}`));
+  const fresh=imgs.filter(f=>{const k=`${f.name}:::${f.size}`;if(seen.has(k))return false;seen.add(k);return true;});
+  if(!fresh.length){showToast('⚠ Already loaded','error');return;}
+
+  // Auto-extract name/dress
+  const cn=$('s_charName'),dn=$('s_dressNum');
+  if(!cn.value.trim()||!dn.value.trim()){
+    for(const f of fresh){
+      const ex=parseFilename(f.name);
+      if(ex.name&&!cn.value.trim())cn.value=ex.name;
+      if(ex.dress&&!dn.value.trim())dn.value=ex.dress;
+      if(cn.value.trim())break;
+    }
+    updatePreviews();
+  }
+
+  const loaded=await Promise.allSettled(fresh.map(f=>loadDims(f)));
+  let count=0;
+  loaded.forEach((r,i)=>{
+    if(r.status!=='fulfilled')return;
+    const{w,h,url}=r.value;const file=fresh[i];
+    const ra=R_parseAngle(file.name),ca=C_parseAngle(file.name);
+    S_images.push({file,objectURL:url,originalName:file.name,natW:w,natH:h,
+      r_angle:ra.angle,r_customAngle:'',r_conf:ra.confidence,
+      c_angle:ca.angle,c_customAngle:'',c_conf:ca.confidence,c_overrides:{}});
+    count++;
+  });
+
+  R_rebuildGrid();C_rebuildGrid();S_updateUI();
+  showToast(`✓ ${count} image${count>1?'s':''} synced to both tools`,'success');
+  const gridId=activeTab==='renamer'?'r_gridSection':'c_gridSection';
+  setTimeout(()=>$(gridId)?.scrollIntoView({behavior:'smooth',block:'start'}),80);
+}
+
+function S_removeImage(i){
+  URL.revokeObjectURL(S_images[i].objectURL);
+  S_images.splice(i,1);
+  R_rebuildGrid();C_rebuildGrid();S_updateUI();
+}
+
+function S_clearAll(){
+  S_images.forEach(i=>URL.revokeObjectURL(i.objectURL));
+  S_images=[];
+  $('r_grid').innerHTML='';$('c_grid').innerHTML='';S_updateUI();
+  showToast('↺ Cleared','');
+}
+
+function S_updateUI(){
+  const n=S_images.length,show=n>0;
+  // Renamer
+  $('r_count').textContent=n;
+  $('r_gridSection').style.display=show?'block':'none';
+  $('r_actionBar').style.display=show?'block':'none';
+  $('r_addMore').style.display=show?'flex':'none';
+  $('r_dropZone').style.display=show?'none':'block';
+  R_checkConflicts();
+  $('r_summary').textContent=`${n} file${n!==1?'s':''} → ${getChar()}${getDressStr()}_FullBodyShot_*.png`;
+  // Crop
+  $('c_count').textContent=n;
+  $('c_gridSection').style.display=show?'block':'none';
+  $('c_actionBar').style.display=show?'block':'none';
+  $('c_addMore').style.display=show?'flex':'none';
+  $('c_dropZone').style.display=show?'none':'block';
+  const ep=C_profiles.filter(p=>p.enabled).length;
+  $('c_summary').textContent=`${n} × ${ep} profiles = ${n*ep} outputs`;
+}
+
+/* ── File inputs & drag/drop ── */
+$('fileInput').addEventListener('change',e=>{S_ingestFiles(Array.from(e.target.files));e.target.value='';});
+$('zipInput').addEventListener('change',e=>{if(e.target.files[0])S_ingestZip(e.target.files[0]);e.target.value='';});
+document.addEventListener('paste',e=>{const f=Array.from(e.clipboardData?.items||[]).filter(i=>i.kind==='file'&&IMG_TYPES.has(i.type)).map(i=>i.getAsFile()).filter(Boolean);if(f.length){e.preventDefault();S_ingestFiles(f);}});
+
+let _pdoVis=false;
+function showPDO(n){if(_pdoVis)return;_pdoVis=true;$('dropCountLabel').textContent=n>0?n+' items':'';$('pdoSub').textContent='Files sync to both tools';$('pageDropOverlay').classList.add('active');}
+function hidePDO(){if(!_pdoVis)return;_pdoVis=false;$('pageDropOverlay').classList.remove('active');}
+window.addEventListener('dragenter',e=>{e.preventDefault();showPDO(e.dataTransfer?.items?.length||0);});
+window.addEventListener('dragover',e=>{e.preventDefault();if(e.dataTransfer)e.dataTransfer.dropEffect='copy';if(!_pdoVis)showPDO(0);});
+window.addEventListener('dragleave',e=>{if(!e.relatedTarget)hidePDO();});
+window.addEventListener('drop',e=>{e.preventDefault();hidePDO();const f=Array.from(e.dataTransfer?.files||[]);if(!f.length)return;const zips=f.filter(x=>x.name.toLowerCase().endsWith('.zip')||x.type==='application/zip');const rest=f.filter(x=>!x.name.toLowerCase().endsWith('.zip')&&x.type!=='application/zip');if(zips.length)zips.forEach(z=>S_ingestZip(z));if(rest.length)S_ingestFiles(rest);});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('tweakModal').classList.contains('active'))C_closeTweak();else if($('lightbox').classList.contains('active'))closeLightbox();}});
+
+async function S_ingestZip(file){
+  const ov=$('progressOverlay'),bar=$('progressBarFill'),sub=$('progressSub');
+  $('progressTitle').innerHTML='Extracting <em>archive</em>…';ov.classList.add('active');sub.textContent='Reading ZIP…';bar.style.width='10%';
+  try{
+    const zip=await JSZip.loadAsync(file);const entries=[];
+    zip.forEach((p,e)=>{if(!e.dir){const n=p.split('/').pop();if(IMG_EXT.test(n))entries.push({entry:e,name:n});}});
+    if(!entries.length){ov.classList.remove('active');showToast('⚠ No images in ZIP','error');return;}
+    const extracted=[];
+    for(let i=0;i<entries.length;i++){sub.textContent=`Extracting ${entries[i].name}…`;bar.style.width=`${30+(i/entries.length)*60}%`;const blob=await entries[i].entry.async('blob');const ext=entries[i].name.match(/\.[^.]+$/)?.[0]?.toLowerCase()||'.png';const mimes={'.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.gif':'image/gif'};extracted.push(new File([blob],entries[i].name,{type:mimes[ext]||'image/png'}));}
+    ov.classList.remove('active');S_ingestFiles(extracted);
+  }catch(err){ov.classList.remove('active');showToast(`✕ ${err.message}`,'error');}
+}
+
+/* ═══════════════════════════════════════
+   MODULE R: ASSET RENAMER
+   ═══════════════════════════════════════ */
+function R_buildAngleOpts(img){
+  let h='';for(const[g,as]of Object.entries(R_ANGLES)){h+=`<optgroup label="${g}">`;for(const a of as){h+=`<option value="${a}"${a===img.r_angle?' selected':''}>${a==='__custom__'?'✎ Custom':a}</option>`;}h+='</optgroup>';}return h;
+}
+
+function R_buildCard(i){
+  const img=S_images[i];const card=document.createElement('div');card.className='img-card';card.dataset.idx=i;card.style.animationDelay=`${(i%20)*.04}s`;
+  const cl={high:'conf-high',med:'conf-med',low:'conf-low',custom:'conf-custom'};
+  const lb={high:'HIGH',med:'MED',low:'GUESS',custom:'CUSTOM'};
+  const isCust=img.r_angle==='__custom__';const cc=isCust?'custom':img.r_conf;
+  card.innerHTML=`<div class="card-chrome"><span class="card-idx">#${String(i+1).padStart(2,'0')}</span><span class="conf-tag ${cl[cc]}" id="r_ct_${i}">${lb[cc]}</span><div class="card-chrome-actions"><button class="icon-btn dl" onclick="R_dl(${i})" title="Download">⬇</button><button class="icon-btn del" onclick="S_removeImage(${i})">✕</button></div></div>
+  <div class="card-thumb" onclick="openLightbox('${img.objectURL}','${img.originalName}')"><img src="${img.objectURL}" alt="" loading="lazy"/><button class="card-thumb-expand" onclick="event.stopPropagation();openLightbox('${img.objectURL}','${img.originalName} — ${img.natW}×${img.natH}')">⤢</button></div>
+  <div class="card-body"><div class="card-fname">${img.originalName}</div><div><div class="angle-lbl">Angle</div><select class="angle-select" onchange="R_setAngle(${i},this.value)">${R_buildAngleOpts(img)}</select><div class="custom-angle-wrap ${isCust?'visible':''}" id="r_cw_${i}"><input type="text" class="custom-angle-input" id="r_ci_${i}" placeholder="e.g. TopDownView" value="${img.r_customAngle||''}" oninput="R_setCustom(${i},this.value)" spellcheck="false"/><div class="custom-hint">PascalCase</div></div></div><div class="card-out" id="r_out_${i}">${R_buildName(img)}</div></div>`;
   return card;
 }
 
-function onAngleChange(i, v) {
-  images[i].guessedAngle = v;
-  
-  // Show/hide custom input
-  const customWrap = document.getElementById(`customWrap_${i}`);
-  const confTag = document.getElementById(`confTag_${i}`);
-  
-  if (v === '__custom__') {
-    customWrap.classList.add('visible');
-    confTag.className = 'conf-tag conf-custom';
-    confTag.textContent = 'CUSTOM';
-    // Focus the input
-    setTimeout(() => {
-      document.getElementById(`customInput_${i}`)?.focus();
-    }, 50);
-  } else {
-    customWrap.classList.remove('visible');
-    // Restore original confidence
-    const confLabel = { high:'HIGH CONF', med:'MED CONF', low:'GUESSED' };
-    const confClass = { high:'conf-high',  med:'conf-med',  low:'conf-low' };
-    confTag.className = `conf-tag ${confClass[images[i].confidence]}`;
-    confTag.textContent = confLabel[images[i].confidence];
-  }
-  
-  updateCardOutput(i);
-  checkConflicts();
-  updateExportSummary();
+function R_rebuildGrid(){const g=$('r_grid');g.innerHTML='';S_images.forEach((_,i)=>g.appendChild(R_buildCard(i)));}
+function R_refreshOutputs(){S_images.forEach((_,i)=>{const el=$(`r_out_${i}`);if(el)el.textContent=R_buildName(S_images[i]);});$('r_summary').textContent=`${S_images.length} files → ${getChar()}${getDressStr()}_FullBodyShot_*.png`;}
+
+function R_setAngle(i,v){
+  S_images[i].r_angle=v;const cw=$(`r_cw_${i}`),ct=$(`r_ct_${i}`);
+  if(v==='__custom__'){cw.classList.add('visible');ct.className='conf-tag conf-custom';ct.textContent='CUSTOM';setTimeout(()=>$(`r_ci_${i}`)?.focus(),50);}
+  else{cw.classList.remove('visible');const c={high:'conf-high',med:'conf-med',low:'conf-low'},l={high:'HIGH',med:'MED',low:'GUESS'};ct.className=`conf-tag ${c[S_images[i].r_conf]}`;ct.textContent=l[S_images[i].r_conf];}
+  $(`r_out_${i}`).textContent=R_buildName(S_images[i]);R_checkConflicts();
+}
+function R_setCustom(i,v){const s=v.replace(/[^a-zA-Z0-9]/g,'');S_images[i].r_customAngle=s;const inp=$(`r_ci_${i}`);if(inp&&inp.value!==s)inp.value=s;$(`r_out_${i}`).textContent=R_buildName(S_images[i]);R_checkConflicts();}
+
+function R_checkConflicts(){
+  const counts={};let hasEmpty=false;
+  S_images.forEach(img=>{const a=R_getAngle(img);if(img.r_angle==='__custom__'&&!img.r_customAngle)hasEmpty=true;counts[a]=(counts[a]||0)+1;});
+  const dupes=new Set(Object.entries(counts).filter(([,v])=>v>1).map(([k])=>k));let n=0;
+  document.querySelectorAll('#r_grid .img-card').forEach(card=>{const img=S_images[+card.dataset.idx];if(!img)return;if(dupes.has(R_getAngle(img))){card.classList.add('conflict');n++;}else card.classList.remove('conflict');});
+  const badge=$('r_conflictBadge'),btn=$('r_exportBtn');
+  if(n>0||hasEmpty){badge.classList.add('visible');$('r_conflictText').textContent=hasEmpty?'Empty custom angles':'Duplicate angles';btn.disabled=true;}
+  else{badge.classList.remove('visible');btn.disabled=false;}
 }
 
-function onCustomAngleInput(i, value) {
-  // Sanitize: PascalCase, no spaces or special chars
-  const sanitized = value.replace(/[^a-zA-Z0-9]/g, '');
-  images[i].customAngle = sanitized;
-  
-  // Update input if sanitization changed value
-  const input = document.getElementById(`customInput_${i}`);
-  if (input && input.value !== sanitized) {
-    input.value = sanitized;
-  }
-  
-  updateCardOutput(i);
-  checkConflicts();
-  updateExportSummary();
+function R_dl(i){
+  const img=S_images[i];if(!$('s_charName').value.trim()){showToast('⚠ Enter name','error');return;}
+  if(img.r_angle==='__custom__'&&!img.r_customAngle){showToast('⚠ Enter angle','error');return;}
+  const a=document.createElement('a');a.href=img.objectURL;a.download=R_buildName(img);document.body.appendChild(a);a.click();document.body.removeChild(a);showToast('⬇ Downloaded','success');
 }
 
-function updateCardOutput(i) {
-  const el = document.getElementById(`cardOutput_${i}`);
-  if (el && images[i]) el.textContent = buildOutputName(images[i]);
+async function R_export(){
+  const valid=S_images;if(!valid.length){showToast('No images','error');return;}
+  const c=$('s_charName').value.trim();if(!c){showToast('⚠ Enter name','error');return;}
+  if(valid.some(i=>i.r_angle==='__custom__'&&!i.r_customAngle)){showToast('⚠ Fill custom angles','error');return;}
+  const counts={};valid.forEach(i=>{const a=R_getAngle(i);counts[a]=(counts[a]||0)+1;});
+  if(Object.values(counts).some(v=>v>1)){showToast('⚠ Resolve duplicates','error');return;}
+  const ov=$('progressOverlay'),bar=$('progressBarFill'),sub=$('progressSub');
+  $('progressTitle').innerHTML='Packaging <em>archive</em>…';ov.classList.add('active');bar.style.width='0%';
+  try{
+    const zip=new JSZip(),folder=zip.folder(`${getChar()}${getDressStr()}_renders`);
+    for(let i=0;i<valid.length;i++){sub.textContent=`Reading ${valid[i].originalName}…`;bar.style.width=`${(i/valid.length)*72}%`;const r=await fetch(valid[i].objectURL);folder.file(R_buildName(valid[i]),await r.arrayBuffer());}
+    sub.textContent='Compressing…';bar.style.width='80%';
+    const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:3}},m=>{bar.style.width=`${80+m.percent*.2}%`;});
+    bar.style.width='100%';await new Promise(r=>setTimeout(r,300));
+    const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`${getChar()}${getDressStr()}_renders.zip`;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),5000);
+    ov.classList.remove('active');showToast(`✓ ${valid.length} files packaged`,'success');
+  }catch(err){ov.classList.remove('active');showToast(`✕ ${err.message}`,'error');}
 }
 
-function removeCard(index) {
-  URL.revokeObjectURL(images[index].objectURL);
-  images[index] = null;
-  const card = document.querySelector(`.img-card[data-index="${index}"]`);
-  if (card) {
-    card.style.transition = 'opacity 0.2s, transform 0.2s';
-    card.style.opacity = '0'; card.style.transform = 'scale(0.88)';
-    setTimeout(() => card.remove(), 230);
-  }
-  setTimeout(() => { images = images.filter(Boolean); rebuildGrid(); updateUI(); }, 270);
+/* ═══════════════════════════════════════
+   MODULE C: CROP GENERATOR
+   ═══════════════════════════════════════ */
+
+/* ── Crop math ── */
+function C_computeCrop(p,nW,nH){
+  let w=Math.round(nW*p.widthPct/100),h;
+  if(p.aspect>0){h=Math.round(w/p.aspect);if(h>nH){h=nH;w=Math.round(h*p.aspect);}if(w>nW){w=nW;h=Math.round(w/p.aspect);}}else{h=Math.round(nH*p.heightPct/100);}
+  w=Math.max(1,Math.min(w,nW));h=Math.max(1,Math.min(h,nH));
+  let x=Math.round((nW-w)*p.xPct/100),y=Math.round(nH*p.yPct/100);
+  x=Math.max(0,Math.min(x,nW-w));y=Math.max(0,Math.min(y,nH-h));
+  return{x,y,w,h};
+}
+function C_getCrop(img,p){return(img.c_overrides&&img.c_overrides[p.id])?img.c_overrides[p.id]:C_computeCrop(p,img.natW,img.natH);}
+function C_previewStyle(img,p,sz){
+  if(!img.natW)return{};const c=C_getCrop(img,p);if(c.w<1||c.h<1)return{};
+  const sx=sz/c.w,sy=sz/c.h,sc=Math.max(sx,sy);
+  return{backgroundImage:`url(${img.objectURL})`,backgroundSize:`${img.natW*sc}px ${img.natH*sc}px`,backgroundPosition:`${-(c.x*sc)+(sz-c.w*sc)/2}px ${-(c.y*sc)+(sz-c.h*sc)/2}px`};
 }
 
-function rebuildGrid() {
-  const grid = document.getElementById('imageGrid');
-  grid.innerHTML = '';
-  images.forEach((_, i) => grid.appendChild(buildCard(i)));
-  checkConflicts();
-}
-
-// ════════════════════════════════════════════
-//  CONFLICT DETECTION — UPDATED FOR CUSTOM
-// ════════════════════════════════════════════
-function checkConflicts() {
-  const counts = {};
-  let hasEmptyCustom = false;
-  
-  images.filter(Boolean).forEach(img => {
-    const effectiveAngle = getEffectiveAngle(img);
-    if (img.guessedAngle === '__custom__' && !img.customAngle) {
-      hasEmptyCustom = true;
-    }
-    counts[effectiveAngle] = (counts[effectiveAngle] || 0) + 1;
+/* ── Profiles UI ── */
+function C_renderProfiles(){
+  const list=$('c_profileList');list.innerHTML='';
+  C_profiles.forEach(p=>{
+    const row=document.createElement('div');row.className='profile-row';
+    const aspH=ASPECT_OPTS.map(o=>`<option value="${o.v}"${Math.abs(p.aspect-o.v)<.005?' selected':''}>${o.l}</option>`).join('');
+    const freeH=p.aspect===0?`<div class="psg"><span class="psg-label">H%</span><div class="psg-row"><input type="range" class="psg-slider" min="10" max="100" value="${p.heightPct}" oninput="C_pSlider('${p.id}','heightPct',this.value,this)"/><span class="psg-val">${p.heightPct}%</span></div></div>`:'';
+    row.innerHTML=`<div class="profile-toggle ${p.enabled?'active':''}" onclick="C_pToggle('${p.id}')"></div><div class="profile-color-dot" style="background:${p.color};box-shadow:0 0 8px ${p.color}"></div><input class="profile-name-input" value="${p.name}" oninput="C_pRename('${p.id}',this.value)" spellcheck="false"/><div class="profile-controls"><div class="psg"><span class="psg-label">W%</span><div class="psg-row"><input type="range" class="psg-slider" min="10" max="100" value="${p.widthPct}" oninput="C_pSlider('${p.id}','widthPct',this.value,this)"/><span class="psg-val">${p.widthPct}%</span></div></div><div class="psg"><span class="psg-label">X</span><div class="psg-row"><input type="range" class="psg-slider" min="0" max="100" value="${p.xPct}" oninput="C_pSlider('${p.id}','xPct',this.value,this)"/><span class="psg-val">${p.xPct}%</span></div></div><div class="psg"><span class="psg-label">Y</span><div class="psg-row"><input type="range" class="psg-slider" min="0" max="90" value="${p.yPct}" oninput="C_pSlider('${p.id}','yPct',this.value,this)"/><span class="psg-val">${p.yPct}%</span></div></div><div class="psg"><span class="psg-label">Ratio</span><select class="psg-select" onchange="C_pAspect('${p.id}',this.value)">${aspH}</select></div>${freeH}</div>${C_profiles.length>1?`<button class="profile-del" onclick="C_pDel('${p.id}')">✕</button>`:''}`;
+    list.appendChild(row);
   });
-  
-  const dupes = new Set(Object.entries(counts).filter(([,v]) => v > 1).map(([k]) => k));
-  let n = 0;
+  updatePreviews();C_refreshPreviews();
+}
+function C_pToggle(id){const p=C_profiles.find(x=>x.id===id);if(p){p.enabled=!p.enabled;C_renderProfiles();S_updateUI();}}
+function C_pRename(id,v){const p=C_profiles.find(x=>x.id===id);if(p){p.name=v.replace(/[^a-zA-Z0-9_]/g,'')||'Custom';updatePreviews();C_refreshOutputs();}}
+function C_pSlider(id,k,v,el){const p=C_profiles.find(x=>x.id===id);if(p){p[k]=+v;el.parentElement.querySelector('.psg-val').textContent=v+'%';C_refreshPreviews();}}
+function C_pAspect(id,v){const p=C_profiles.find(x=>x.id===id);if(p){p.aspect=parseFloat(v);C_renderProfiles();}}
+function C_pDel(id){C_profiles=C_profiles.filter(x=>x.id!==id);S_images.forEach(i=>{if(i.c_overrides)delete i.c_overrides[id];});C_renderProfiles();S_updateUI();}
+function C_addProfile(){const n=C_profiles.length;C_profiles.push({id:'cp'+(++C_pid),name:'Custom'+(n+1),enabled:true,widthPct:50,xPct:50,yPct:0,aspect:.5625,heightPct:50,color:PROFILE_COLORS[n%PROFILE_COLORS.length]});C_renderProfiles();S_updateUI();}
+C_renderProfiles();
 
-  document.querySelectorAll('.img-card').forEach(card => {
-    const img = images[+card.dataset.index];
-    if (!img) return;
-    const effectiveAngle = getEffectiveAngle(img);
-    if (dupes.has(effectiveAngle)) { card.classList.add('conflict'); n++; }
-    else card.classList.remove('conflict');
-  });
-
-  const badge = document.getElementById('conflictBadge');
-  const btn   = document.getElementById('generateBtn');
-
-  if (n > 0 || hasEmptyCustom) {
-    badge.classList.add('visible');
-    if (hasEmptyCustom && n === 0) {
-      document.getElementById('conflictText').textContent = 'Empty custom angle — enter a name';
-    } else if (hasEmptyCustom) {
-      document.getElementById('conflictText').textContent = `${dupes.size} duplicate${dupes.size>1?'s':''} + empty custom angles`;
-    } else {
-      document.getElementById('conflictText').textContent =
-        `${dupes.size} duplicate angle${dupes.size>1?'s':''} — resolve before export`;
-    }
-    btn.disabled = true;
-  } else {
-    badge.classList.remove('visible');
-    btn.disabled = false;
-  }
+/* ── Grid ── */
+function C_buildCard(i){
+  const img=S_images[i];const card=document.createElement('div');card.className='img-card';card.dataset.idx=i;card.style.animationDelay=`${(i%20)*.04}s`;
+  const cl={high:'conf-high',med:'conf-med',low:'conf-low',custom:'conf-custom'};const lb={high:'HIGH',med:'MED',low:'GUESS',custom:'CUSTOM'};
+  const isCust=img.c_angle==='__custom__';const cc=isCust?'custom':img.c_conf;
+  let opts='';for(const[g,as]of Object.entries(C_ANGLES)){opts+=`<optgroup label="${g}">`;for(const a of as){opts+=`<option value="${a}"${a===img.c_angle?' selected':''}>${a==='__custom__'?'✎ Custom':a}</option>`;}opts+='</optgroup>';}
+  const ep=C_profiles.filter(p=>p.enabled);
+  let prevH='';ep.forEach(p=>{const s=C_previewStyle(img,p,56);prevH+=`<div class="crop-preview-item"><div class="crop-preview-thumb" style="border-color:${p.color};${s.backgroundImage?`background-image:${s.backgroundImage};background-size:${s.backgroundSize};background-position:${s.backgroundPosition};`:''}background-repeat:no-repeat"></div><span class="crop-preview-thumb-label" style="color:${p.color}">${p.name}</span></div>`;});
+  let outH='';ep.forEach(p=>{outH+=`<div class="card-out-row"><span class="card-out" style="color:${p.color}">${C_buildName(img,p)}</span><button class="icon-btn dl sm" onclick="event.stopPropagation();C_dlCrop(${i},'${p.id}')">⬇</button></div>`;});
+  card.innerHTML=`<div class="card-chrome"><span class="card-idx">#${String(i+1).padStart(2,'0')}</span><span class="conf-tag ${cl[cc]}" id="c_ct_${i}">${lb[cc]}</span><div class="card-chrome-actions"><button class="icon-btn del" onclick="S_removeImage(${i})">✕</button></div></div>
+  <div class="card-thumb" onclick="openLightbox('${img.objectURL}','${img.originalName} — ${img.natW}×${img.natH}')"><img src="${img.objectURL}" alt="" loading="lazy"/><span class="card-dims">${img.natW}×${img.natH}</span><button class="card-thumb-expand" onclick="event.stopPropagation();openLightbox('${img.objectURL}','${img.originalName}')">⤢</button></div>
+  <div class="card-body"><div class="crop-preview-strip" id="c_strip_${i}">${prevH}</div><button class="btn-tweak" onclick="C_openTweak(${i})">🎯 Tweak</button><div class="card-fname">${img.originalName}</div><div><div class="angle-lbl">Angle</div><select class="angle-select" onchange="C_setAngle(${i},this.value)">${opts}</select><div class="custom-angle-wrap ${isCust?'visible':''}" id="c_cw_${i}"><input type="text" class="custom-angle-input" id="c_ci_${i}" placeholder="e.g. TopView" value="${img.c_customAngle||''}" oninput="C_setCustom(${i},this.value)" spellcheck="false"/><div class="custom-hint">PascalCase</div></div></div><div class="card-outputs" id="c_outs_${i}">${outH}</div></div>`;
+  return card;
 }
 
-// ════════════════════════════════════════════
-//  UI STATE
-// ════════════════════════════════════════════
-function updateUI() {
-  const count = images.filter(Boolean).length;
-  document.getElementById('fileCountNum').textContent = count;
+function C_rebuildGrid(){$('c_grid').innerHTML='';S_images.forEach((_,i)=>$('c_grid').appendChild(C_buildCard(i)));}
+function C_refreshOutputs(){S_images.forEach((img,i)=>{const el=$(`c_outs_${i}`);if(!el)return;el.innerHTML=C_profiles.filter(p=>p.enabled).map(p=>`<div class="card-out-row"><span class="card-out" style="color:${p.color}">${C_buildName(img,p)}</span><button class="icon-btn dl sm" onclick="event.stopPropagation();C_dlCrop(${i},'${p.id}')">⬇</button></div>`).join('');});S_updateUI();}
+function C_refreshPreviews(){S_images.forEach((img,i)=>{const strip=$(`c_strip_${i}`);if(!strip)return;strip.innerHTML=C_profiles.filter(p=>p.enabled).map(p=>{const s=C_previewStyle(img,p,56);return`<div class="crop-preview-item"><div class="crop-preview-thumb" style="border-color:${p.color};${s.backgroundImage?`background-image:${s.backgroundImage};background-size:${s.backgroundSize};background-position:${s.backgroundPosition};`:''}background-repeat:no-repeat"></div><span class="crop-preview-thumb-label" style="color:${p.color}">${p.name}</span></div>`;}).join('');C_refreshOutputs();});}
 
-  const show = count > 0;
-  document.getElementById('gridSection').style.display  = show ? 'block' : 'none';
-  document.getElementById('actionBar').style.display    = show ? 'block' : 'none';
-  document.getElementById('addMoreStrip').style.display = show ? 'flex'  : 'none';
-  document.getElementById('dropZone').style.display     = show ? 'none'  : 'block';
+function C_setAngle(i,v){S_images[i].c_angle=v;const cw=$(`c_cw_${i}`),ct=$(`c_ct_${i}`);if(v==='__custom__'){cw.classList.add('visible');ct.className='conf-tag conf-custom';ct.textContent='CUSTOM';setTimeout(()=>$(`c_ci_${i}`)?.focus(),50);}else{cw.classList.remove('visible');const c={high:'conf-high',med:'conf-med',low:'conf-low'},l={high:'HIGH',med:'MED',low:'GUESS'};ct.className=`conf-tag ${c[S_images[i].c_conf]}`;ct.textContent=l[S_images[i].c_conf];}C_refreshOutputs();}
+function C_setCustom(i,v){const s=v.replace(/[^a-zA-Z0-9]/g,'');S_images[i].c_customAngle=s;const inp=$(`c_ci_${i}`);if(inp&&inp.value!==s)inp.value=s;C_refreshOutputs();}
 
-  checkConflicts();
-  updateExportSummary();
-}
+/* ── Tweak modal ── */
+function C_openTweak(i){C_tweakIdx=i;const img=S_images[i];if(!img)return;$('tweakModal').classList.add('active');$('tweakFileName').textContent=img.originalName;const en=C_profiles.filter(p=>p.enabled);C_tweakPid=en.length?en[0].id:null;const ti=$('tweakImg');ti.onload=()=>requestAnimationFrame(()=>requestAnimationFrame(()=>C_layoutTweak()));ti.src=img.objectURL;if(ti.complete)requestAnimationFrame(()=>requestAnimationFrame(()=>C_layoutTweak()));}
+function C_layoutTweak(){if(C_tweakIdx===null)return;const img=S_images[C_tweakIdx];if(!img)return;const area=$('tweakCanvasArea'),wrap=$('tweakImgWrapper'),el=$('tweakImg');const pad=36,aW=area.clientWidth-pad*2,aH=area.clientHeight-pad*2;if(aW<10||aH<10)return;const sc=Math.min(aW/img.natW,aH/img.natH,1);const dW=Math.round(img.natW*sc),dH=Math.round(img.natH*sc);wrap.style.width=dW+'px';wrap.style.height=dH+'px';el.style.width=dW+'px';el.style.height=dH+'px';C_tweakScale=sc;C_renderBoxes();C_renderFooterBtns();}
+function C_closeTweak(){$('tweakModal').classList.remove('active');$('tweakImgWrapper').querySelectorAll('.crop-box').forEach(b=>b.remove());C_tweakIdx=null;C_tweakPid=null;C_refreshPreviews();}
+function C_renderFooterBtns(){const f=$('tweakFooter');f.querySelectorAll('.tweak-profile-btn').forEach(b=>b.remove());const rb=f.querySelector('.tweak-reset-btn');C_profiles.filter(p=>p.enabled).forEach(p=>{const b=document.createElement('button');b.className=`tweak-profile-btn ${p.id===C_tweakPid?'sel':''}`;b.style.borderColor=p.color;b.style.color=p.color;if(p.id===C_tweakPid)b.style.background=p.color+'22';b.textContent=p.name;b.onclick=()=>{C_tweakPid=p.id;C_renderFooterBtns();C_updateBoxStyles();};f.insertBefore(b,rb);});}
+function C_renderBoxes(){const wrap=$('tweakImgWrapper'),img=S_images[C_tweakIdx];if(!img)return;wrap.querySelectorAll('.crop-box').forEach(b=>b.remove());const sc=C_tweakScale;
+  C_profiles.filter(p=>p.enabled).forEach(p=>{const crop=C_getCrop(img,p);const box=document.createElement('div');box.className=`crop-box ${p.id===C_tweakPid?'active-box':''}`;box.dataset.pid=p.id;box.style.borderColor=p.color;box.style.left=(crop.x*sc)+'px';box.style.top=(crop.y*sc)+'px';box.style.width=(crop.w*sc)+'px';box.style.height=(crop.h*sc)+'px';if(p.id===C_tweakPid)box.style.boxShadow=`0 0 0 9999px rgba(0,0,0,.5),0 0 20px ${p.color}55`;
+  box.innerHTML=`<div class="crop-box-label" style="background:${p.color};color:#000">${p.name}</div><div class="crop-box-dims">${crop.w}×${crop.h}</div><div class="crop-handle nw" style="color:${p.color}" data-c="nw"></div><div class="crop-handle ne" style="color:${p.color}" data-c="ne"></div><div class="crop-handle sw" style="color:${p.color}" data-c="sw"></div><div class="crop-handle se" style="color:${p.color}" data-c="se"></div>`;
+  box.addEventListener('mousedown',e=>{if(e.target.classList.contains('crop-handle'))return;e.preventDefault();C_tweakPid=p.id;C_renderFooterBtns();C_updateBoxStyles();C_drag={on:true,mode:'move',corner:'',pid:p.id,sx:e.clientX,sy:e.clientY,sc:{...C_getCrop(img,p)}};});
+  box.querySelectorAll('.crop-handle').forEach(h=>{h.addEventListener('mousedown',e=>{e.preventDefault();e.stopPropagation();C_tweakPid=p.id;C_renderFooterBtns();C_updateBoxStyles();C_drag={on:true,mode:'resize',corner:h.dataset.c,pid:p.id,sx:e.clientX,sy:e.clientY,sc:{...C_getCrop(img,p)}};});});
+  wrap.appendChild(box);});}
+function C_updateBoxStyles(){document.querySelectorAll('#tweakImgWrapper .crop-box').forEach(box=>{const pid=box.dataset.pid,p=C_profiles.find(x=>x.id===pid);if(!p)return;const a=pid===C_tweakPid;box.classList.toggle('active-box',a);box.style.boxShadow=a?`0 0 0 9999px rgba(0,0,0,.5),0 0 20px ${p.color}55`:'none';});}
 
-function updateExportSummary() {
-  const count = images.filter(Boolean).length;
-  document.getElementById('exportSummary').textContent =
-    `${count} file${count!==1?'s':''} → ${getChar()}_${getDress()}_FullBodyShot_*.png`;
-}
+document.addEventListener('mousemove',e=>{if(!C_drag.on||C_tweakIdx===null)return;e.preventDefault();const img=S_images[C_tweakIdx],p=C_profiles.find(x=>x.id===C_drag.pid);if(!img||!p)return;const sc=C_tweakScale,s=C_drag.sc,dx=(e.clientX-C_drag.sx)/sc,dy=(e.clientY-C_drag.sy)/sc;let x=s.x,y=s.y,w=s.w,h=s.h;
+if(C_drag.mode==='move'){x=s.x+dx;y=s.y+dy;}else{const c=C_drag.corner,asp=p.aspect;if(c==='se'){w=s.w+dx;if(asp>0)h=w/asp;else h=s.h+dy;}else if(c==='ne'){w=s.w+dx;if(asp>0){h=w/asp;y=s.y+s.h-h;}else{h=s.h-dy;y=s.y+dy;}}else if(c==='sw'){w=s.w-dx;x=s.x+dx;if(asp>0)h=w/asp;else h=s.h+dy;}else if(c==='nw'){w=s.w-dx;x=s.x+dx;if(asp>0){h=w/asp;y=s.y+s.h-h;}else{h=s.h-dy;y=s.y+dy;}}}
+if(w<20)w=20;if(h<20)h=20;if(w>img.natW)w=img.natW;if(h>img.natH)h=img.natH;if(x<0)x=0;if(y<0)y=0;if(x+w>img.natW)x=img.natW-w;if(y+h>img.natH)y=img.natH-h;
+x=Math.round(x);y=Math.round(y);w=Math.round(w);h=Math.round(h);
+if(!img.c_overrides)img.c_overrides={};img.c_overrides[p.id]={x,y,w,h};
+const box=document.querySelector(`.crop-box[data-pid="${p.id}"]`);if(box){box.style.left=(x*sc)+'px';box.style.top=(y*sc)+'px';box.style.width=(w*sc)+'px';box.style.height=(h*sc)+'px';const d=box.querySelector('.crop-box-dims');if(d)d.textContent=`${w}×${h}`;}});
+document.addEventListener('mouseup',()=>{C_drag.on=false;});
+function C_resetOverrides(){if(C_tweakIdx===null)return;S_images[C_tweakIdx].c_overrides={};C_renderBoxes();showToast('↺ Reset','');}
+window.addEventListener('resize',()=>{if(C_tweakIdx!==null&&$('tweakModal').classList.contains('active'))C_layoutTweak();});
 
-function clearAll() {
-  images.forEach(img => img && URL.revokeObjectURL(img.objectURL));
-  images = [];
-  document.getElementById('imageGrid').innerHTML = '';
-  updateUI();
-  showToast('↺ Workspace cleared', '');
-}
+/* ── Individual download ── */
+async function C_dlCrop(i,pid){
+  const img=S_images[i],p=C_profiles.find(x=>x.id===pid);if(!img||!p)return;
+  if(!$('s_charName').value.trim()){showToast('⚠ Enter name','error');return;}
+  if(img.c_angle==='__custom__'&&!img.c_customAngle){showToast('⚠ Enter angle','error');return;}
+  showToast('⏳ Rendering…','');
+  try{const crop=C_getCrop(img,p);const src=await loadImg(img.objectURL);const tr=parseInt($('c_targetRes').value,10);const oW=tr>0?tr:crop.w,oH=tr>0?Math.round(tr*crop.h/crop.w):crop.h;
+  const cv=document.createElement('canvas');cv.width=oW;cv.height=oH;const ctx=cv.getContext('2d');ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(src,crop.x,crop.y,crop.w,crop.h,0,0,oW,oH);
+  cv.toBlob(blob=>{const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=C_buildName(img,p);document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),3000);cv.width=1;showToast('⬇ Done','success');},'image/png',1.0);
+  }catch(err){showToast(`✕ ${err.message}`,'error');}}
 
-// ════════════════════════════════════════════
-//  ZIP EXPORT — UPDATED FOR CUSTOM ANGLES
-// ════════════════════════════════════════════
-async function generateZip() {
-  const valid = images.filter(Boolean);
-  if (!valid.length) { showToast('No images to export', 'error'); return; }
+/* ── Zip export ── */
+async function C_export(){
+  const valid=S_images;if(!valid.length){showToast('No images','error');return;}
+  if(!$('s_charName').value.trim()){showToast('⚠ Enter name','error');return;}
+  const ep=C_profiles.filter(p=>p.enabled);if(!ep.length){showToast('⚠ Enable a profile','error');return;}
+  if(valid.some(i=>i.c_angle==='__custom__'&&!i.c_customAngle)){showToast('⚠ Fill custom angles','error');return;}
+  const tr=parseInt($('c_targetRes').value,10);const total=valid.length*ep.length;
+  const ov=$('progressOverlay'),bar=$('progressBarFill'),sub=$('progressSub');
+  $('progressTitle').innerHTML='Generating <em>crops</em>…';ov.classList.add('active');bar.style.width='0%';
+  try{const zip=new JSZip(),folder=zip.folder(`${getChar()}${getDressStr()}_dataset`);let done=0;
+  for(const img of valid){sub.textContent=`Loading ${img.originalName}…`;const src=await loadImg(img.objectURL);
+  for(const p of ep){const crop=C_getCrop(img,p);const name=C_buildName(img,p);sub.textContent=name;bar.style.width=`${(done/total)*75}%`;
+  const oW=tr>0?tr:crop.w,oH=tr>0?Math.round(tr*crop.h/crop.w):crop.h;const cv=document.createElement('canvas');cv.width=oW;cv.height=oH;const ctx=cv.getContext('2d');ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(src,crop.x,crop.y,crop.w,crop.h,0,0,oW,oH);
+  const blob=await new Promise(r=>cv.toBlob(r,'image/png',1.0));folder.file(name,blob);cv.width=1;done++;}}
+  sub.textContent='Compressing…';bar.style.width='80%';
+  const zipBlob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:3}},m=>{bar.style.width=`${80+m.percent*.2}%`;});
+  bar.style.width='100%';await new Promise(r=>setTimeout(r,300));
+  const url=URL.createObjectURL(zipBlob),a=document.createElement('a');a.href=url;a.download=`${getChar()}${getDressStr()}_dataset.zip`;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),5000);
+  ov.classList.remove('active');showToast(`✓ ${total} crops packaged`,'success');
+  }catch(err){ov.classList.remove('active');showToast(`✕ ${err.message}`,'error');}}
 
-  const char  = charInput.value.trim();
-  const dress = dressInput.value.trim();
-  if (!char)  { showToast('⚠ Enter Character Name first', 'error'); charInput.focus();  return; }
-  if (!dress) { showToast('⚠ Enter Dress Number first',   'error'); dressInput.focus(); return; }
-
-  // Check for empty custom angles
-  const hasEmptyCustom = valid.some(img => img.guessedAngle === '__custom__' && !img.customAngle);
-  if (hasEmptyCustom) {
-    showToast('⚠ Fill in all custom angle names first', 'error');
-    return;
-  }
-
-  // Check for duplicates
-  const counts = {};
-  valid.forEach(img => {
-    const angle = getEffectiveAngle(img);
-    counts[angle] = (counts[angle] || 0) + 1;
-  });
-  if (Object.values(counts).some(v => v > 1)) {
-    showToast('⚠ Resolve duplicate angles first', 'error'); return;
-  }
-
-  const overlay = document.getElementById('progressOverlay');
-  const bar     = document.getElementById('progressBarFill');
-  const sub     = document.getElementById('progressSub');
-  const title   = document.getElementById('progressTitle');
-  title.innerHTML = 'Packaging <em>archive</em>…';
-  overlay.classList.add('active');
-
-  try {
-    const zip    = new JSZip();
-    const folder = zip.folder(`${char}_${dress}_renders`);
-
-    for (let i = 0; i < valid.length; i++) {
-      const img = valid[i];
-      sub.textContent = `Reading ${img.originalName}…`;
-      bar.style.width = `${(i / valid.length) * 72}%`;
-      const res = await fetch(img.objectURL);
-      folder.file(buildOutputName(img), await res.arrayBuffer());
-    }
-
-    sub.textContent = 'Compressing…'; bar.style.width = '80%';
-
-    const blob = await zip.generateAsync(
-      { type:'blob', compression:'DEFLATE', compressionOptions:{ level:3 } },
-      m => {
-        bar.style.width = `${80 + m.percent * 0.2}%`;
-        sub.textContent = `Compressing… ${Math.round(m.percent)}%`;
-      }
-    );
-
-    bar.style.width = '100%'; sub.textContent = 'Finalising…';
-    await new Promise(r => setTimeout(r, 360));
-
-    const url = URL.createObjectURL(blob);
-    const a   = document.createElement('a');
-    a.href = url; a.download = `${char}_${dress}_standardized_renders.zip`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 6000);
-
-    overlay.classList.remove('active');
-    showToast(`✓ ${valid.length} files packaged and downloaded`, 'success');
-  } catch (err) {
-    overlay.classList.remove('active');
-    showToast(`✕ ${err.message}`, 'error');
-    console.error(err);
-  }
-}
-
-// ════════════════════════════════════════════
-//  INDIVIDUAL IMAGE EXPORT
-// ════════════════════════════════════════════
-function downloadSingle(index) {
-  const img = images[index];
-  if (!img) return;
-
-  const char  = charInput.value.trim();
-  const dress = dressInput.value.trim();
-  if (!char)  { showToast('⚠ Enter Character Name first', 'error'); charInput.focus();  return; }
-  if (!dress) { showToast('⚠ Enter Dress Number first',   'error'); dressInput.focus(); return; }
-
-  if (img.guessedAngle === '__custom__' && !img.customAngle) {
-    showToast('⚠ Enter a custom angle name first', 'error');
-    document.getElementById(`customInput_${index}`)?.focus();
-    return;
-  }
-
-  const outputName = buildOutputName(img);
-  const a = document.createElement('a');
-  a.href = img.objectURL;
-  a.download = outputName;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  showToast(`⬇ Downloaded ${outputName}`, 'success');
-}
-
-// ════════════════════════════════════════════
-//  ZIP IMPORT
-// ════════════════════════════════════════════
-document.getElementById('zipInput').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (file) ingestZip(file);
-  e.target.value = '';
-});
-
-async function ingestZip(file) {
-  if (!file.name.toLowerCase().endsWith('.zip') && file.type !== 'application/zip') {
-    showToast('⚠ Not a valid ZIP file', 'error');
-    return;
-  }
-
-  const overlay = document.getElementById('progressOverlay');
-  const bar     = document.getElementById('progressBarFill');
-  const sub     = document.getElementById('progressSub');
-  const title   = document.getElementById('progressTitle');
-  title.innerHTML = 'Extracting <em>archive</em>…';
-  overlay.classList.add('active');
-  sub.textContent = 'Reading ZIP archive…';
-  bar.style.width = '10%';
-
-  try {
-    const zip = await JSZip.loadAsync(file);
-    const imageEntries = [];
-
-    zip.forEach((path, entry) => {
-      if (entry.dir) return;
-      const name = path.split('/').pop();
-      if (/\.(png|jpe?g|webp|gif|tiff?|bmp|avif|heic)$/i.test(name)) {
-        imageEntries.push({ path, entry, name });
-      }
-    });
-
-    if (!imageEntries.length) {
-      overlay.classList.remove('active');
-      showToast('⚠ No image files found in ZIP', 'error');
-      return;
-    }
-
-    sub.textContent = `Extracting ${imageEntries.length} images…`;
-    bar.style.width = '30%';
-
-    const extracted = [];
-    for (let i = 0; i < imageEntries.length; i++) {
-      const { entry, name } = imageEntries[i];
-      sub.textContent = `Extracting ${name}…`;
-      bar.style.width = `${30 + (i / imageEntries.length) * 60}%`;
-
-      const blob = await entry.async('blob');
-      const ext = name.match(/\.[^.]+$/)?.[0]?.toLowerCase() || '.png';
-      const mimeMap = {
-        '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg',
-        '.webp':'image/webp', '.gif':'image/gif', '.tiff':'image/tiff',
-        '.tif':'image/tiff', '.bmp':'image/bmp', '.avif':'image/avif',
-        '.heic':'image/heic',
-      };
-      const type = mimeMap[ext] || 'image/png';
-      const imgFile = new File([blob], name, { type });
-      extracted.push(imgFile);
-    }
-
-    bar.style.width = '95%';
-    sub.textContent = 'Finalising…';
-    await new Promise(r => setTimeout(r, 200));
-
-    overlay.classList.remove('active');
-    ingestFiles(extracted);
-  } catch (err) {
-    overlay.classList.remove('active');
-    showToast(`✕ Failed to read ZIP: ${err.message}`, 'error');
-    console.error(err);
-  }
-}
-
-// ════════════════════════════════════════════
-//  TOAST
-// ════════════════════════════════════════════
-let _tt = null;
-function showToast(msg, type='') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `show${type?' toast-'+type:''}`;
-  clearTimeout(_tt);
-  _tt = setTimeout(() => t.classList.remove('show'), 3400);
-}
+// Init
+updatePreviews();
 </script>
 </body>
 </html>
