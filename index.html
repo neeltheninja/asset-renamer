@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pica/9.0.1/pica.min.js"></script>
 
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -511,8 +512,7 @@ body::after {
       <div class="section-head"><div class="step-badge">01</div><div class="section-title">Shot Profiles</div><div class="section-sub">Crop regions</div></div>
       <div class="config-panel">
         <div class="config-grid">
-          <div class="field" style="grid-column:1/-1"><label class="field-label">Output Width</label><select id="c_targetRes" class="field-select" style="max-width:300px"><option value="0" selected>Original crop size (lossless)</option><option value="512">512 px</option><option value="768">768 px</option><option value="1024">1024 px</option><option value="2048">2048 px</option></select></div>
-        </div>
+          <div class="field" style="grid-column:1/-1"><label class="field-label">Output Width</label><select id="c_targetRes" class="field-select" style="max-width:300px"><option value="-1">Match Input Resolution (Lossless Scale)</option><option value="0" selected>Original crop size (lossless)</option><option value="512">512 px</option><option value="768">768 px</option><option value="1024">1024 px</option><option value="2048">2048 px</option></select></div>        </div>
         <div class="profiles-section"><div class="profiles-header"><span class="profiles-header-title">Crop Profiles</span><div class="spacer"></div><button class="btn-sm" onclick="C_addProfile()">+ Add</button></div><div class="profile-list" id="c_profileList"></div></div>
       </div>
     </div>
@@ -958,16 +958,52 @@ document.addEventListener('mouseup',()=>{C_drag.on=false;});
 function C_resetOverrides(){if(C_tweakIdx===null)return;S_images[C_tweakIdx].c_overrides={};C_renderBoxes();showToast('↺ Reset','');}
 window.addEventListener('resize',()=>{if(C_tweakIdx!==null&&$('tweakModal').classList.contains('active'))C_layoutTweak();});
 
-/* ── Individual download ── */
 async function C_dlCrop(i,pid){
   const img=S_images[i],p=C_profiles.find(x=>x.id===pid);if(!img||!p)return;
   if(!$('s_charName').value.trim()){showToast('⚠ Enter name','error');return;}
   if(img.c_angle==='__custom__'&&!img.c_customAngle){showToast('⚠ Enter angle','error');return;}
   showToast('⏳ Rendering…','');
-  try{const crop=C_getCrop(img,p);const src=await loadImg(img.objectURL);const tr=parseInt($('c_targetRes').value,10);const oW=tr>0?tr:crop.w,oH=tr>0?Math.round(tr*crop.h/crop.w):crop.h;
-  const cv=document.createElement('canvas');cv.width=oW;cv.height=oH;const ctx=cv.getContext('2d');ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(src,crop.x,crop.y,crop.w,crop.h,0,0,oW,oH);
-  cv.toBlob(blob=>{const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=C_buildName(img,p);document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),3000);cv.width=1;showToast('⬇ Done','success');},'image/png',1.0);
-  }catch(err){showToast(`✕ ${err.message}`,'error');}}
+  try{
+    const crop=C_getCrop(img,p);
+    const src=await loadImg(img.objectURL);
+    const tr=parseInt($('c_targetRes').value,10);
+    
+    // Determine target dimensions based on dropdown
+    let oW, oH;
+    if (tr === -1) { oW = img.natW; oH = img.natH; } // Match original input
+    else if (tr > 0) { oW = tr; oH = Math.round(tr * crop.h / crop.w); }
+    else { oW = crop.w; oH = crop.h; } // Native crop
+
+    // Draw the exact native pixels to a temporary canvas
+    const nativeCv = document.createElement('canvas');
+    nativeCv.width = crop.w; nativeCv.height = crop.h;
+    const nativeCtx = nativeCv.getContext('2d');
+    nativeCtx.drawImage(src, crop.x, crop.y, crop.w, crop.h, 0, 0, crop.w, crop.h);
+
+    const targetCv = document.createElement('canvas');
+    targetCv.width = oW; targetCv.height = oH;
+
+    // Scale with Pica if dimensions changed
+    if (oW !== crop.w || oH !== crop.h) {
+      const pica = window.pica();
+      await pica.resize(nativeCv, targetCv, {
+        quality: 3, unsharpAmount: 90, unsharpRadius: 0.6, unsharpThreshold: 2
+      });
+    } else {
+      targetCv.getContext('2d').drawImage(nativeCv, 0, 0);
+    }
+
+    targetCv.toBlob(blob=>{
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url; a.download=C_buildName(img,p);
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(url),3000);
+      nativeCv.width=1; targetCv.width=1;
+      showToast('⬇ Done','success');
+    },'image/png',1.0);
+  }catch(err){showToast(`✕ ${err.message}`,'error');}
+}
 
 /* ── Zip export ── */
 async function C_export(){
@@ -975,21 +1011,57 @@ async function C_export(){
   if(!$('s_charName').value.trim()){showToast('⚠ Enter name','error');return;}
   const ep=C_profiles.filter(p=>p.enabled);if(!ep.length){showToast('⚠ Enable a profile','error');return;}
   if(valid.some(i=>i.c_angle==='__custom__'&&!i.c_customAngle)){showToast('⚠ Fill custom angles','error');return;}
-  const tr=parseInt($('c_targetRes').value,10);const total=valid.length*ep.length;
+  
+  const tr=parseInt($('c_targetRes').value,10);
+  const total=valid.length*ep.length;
   const ov=$('progressOverlay'),bar=$('progressBarFill'),sub=$('progressSub');
   $('progressTitle').innerHTML='Generating <em>crops</em>…';ov.classList.add('active');bar.style.width='0%';
-  try{const zip=new JSZip(),folder=zip.folder(`${getChar()}${getDressStr()}_dataset`);let done=0;
-  for(const img of valid){sub.textContent=`Loading ${img.originalName}…`;const src=await loadImg(img.objectURL);
-  for(const p of ep){const crop=C_getCrop(img,p);const name=C_buildName(img,p);sub.textContent=name;bar.style.width=`${(done/total)*75}%`;
-  const oW=tr>0?tr:crop.w,oH=tr>0?Math.round(tr*crop.h/crop.w):crop.h;const cv=document.createElement('canvas');cv.width=oW;cv.height=oH;const ctx=cv.getContext('2d');ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(src,crop.x,crop.y,crop.w,crop.h,0,0,oW,oH);
-  const blob=await new Promise(r=>cv.toBlob(r,'image/png',1.0));folder.file(name,blob);cv.width=1;done++;}}
-  sub.textContent='Compressing…';bar.style.width='80%';
-  const zipBlob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:3}},m=>{bar.style.width=`${80+m.percent*.2}%`;});
-  bar.style.width='100%';await new Promise(r=>setTimeout(r,300));
-  const url=URL.createObjectURL(zipBlob),a=document.createElement('a');a.href=url;a.download=`${getChar()}${getDressStr()}_dataset.zip`;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),5000);
-  ov.classList.remove('active');showToast(`✓ ${total} crops packaged`,'success');
-  }catch(err){ov.classList.remove('active');showToast(`✕ ${err.message}`,'error');}}
+  
+  try{
+    const zip=new JSZip(),folder=zip.folder(`${getChar()}${getDressStr()}_dataset`);let done=0;
+    const pica = window.pica(); // Initialize pica once for bulk
+    
+    for(const img of valid){
+      sub.textContent=`Loading ${img.originalName}…`;
+      const src=await loadImg(img.objectURL);
+      
+      for(const p of ep){
+        const crop=C_getCrop(img,p);
+        const name=C_buildName(img,p);
+        sub.textContent=name;bar.style.width=`${(done/total)*75}%`;
+        
+        let oW, oH;
+        if (tr === -1) { oW = img.natW; oH = img.natH; }
+        else if (tr > 0) { oW = tr; oH = Math.round(tr * crop.h / crop.w); }
+        else { oW = crop.w; oH = crop.h; }
 
+        const nativeCv = document.createElement('canvas');
+        nativeCv.width = crop.w; nativeCv.height = crop.h;
+        nativeCv.getContext('2d').drawImage(src, crop.x, crop.y, crop.w, crop.h, 0, 0, crop.w, crop.h);
+
+        const targetCv = document.createElement('canvas');
+        targetCv.width = oW; targetCv.height = oH;
+
+        if (oW !== crop.w || oH !== crop.h) {
+          await pica.resize(nativeCv, targetCv, {
+            quality: 3, unsharpAmount: 90, unsharpRadius: 0.6, unsharpThreshold: 2
+          });
+        } else {
+          targetCv.getContext('2d').drawImage(nativeCv, 0, 0);
+        }
+        
+        const blob=await new Promise(r=>targetCv.toBlob(r,'image/png',1.0));
+        folder.file(name,blob);
+        nativeCv.width=1; targetCv.width=1; done++;
+      }
+    }
+    sub.textContent='Compressing…';bar.style.width='80%';
+    const zipBlob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:3}},m=>{bar.style.width=`${80+m.percent*.2}%`;});
+    bar.style.width='100%';await new Promise(r=>setTimeout(r,300));
+    const url=URL.createObjectURL(zipBlob),a=document.createElement('a');a.href=url;a.download=`${getChar()}${getDressStr()}_dataset.zip`;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),5000);
+    ov.classList.remove('active');showToast(`✓ ${total} crops packaged`,'success');
+  }catch(err){ov.classList.remove('active');showToast(`✕ ${err.message}`,'error');}
+}
 // Init
 updatePreviews();
 </script>
