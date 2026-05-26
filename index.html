@@ -558,6 +558,7 @@ let activeTab='renamer', includeDress=true, isDark=true, useSeqNaming=false;
 let S_images=[];
 let C_pid=0;
 let C_profiles=[
+  {id:'cp'+(++C_pid),name:'FullBody',enabled:true,widthPct:100,xPct:50,yPct:0,aspect:0,heightPct:100,color:PROFILE_COLORS[2]},
   {id:'cp'+(++C_pid),name:'Portrait',enabled:true,widthPct:32,xPct:50,yPct:0,aspect:.5625,heightPct:45,color:PROFILE_COLORS[0]},
   {id:'cp'+(++C_pid),name:'MidBody',enabled:true,widthPct:59,xPct:50,yPct:0,aspect:.5625,heightPct:75,color:PROFILE_COLORS[1]},
 ];
@@ -710,13 +711,13 @@ function getDressStr(){
 function R_getAngle(img){return img.r_angle==='__custom__'?(img.r_customAngle||'CustomAngle'):img.r_angle;}
 function C_getAngle(img){return img.c_angle==='__custom__'?(img.c_customAngle||'CustomAngle'):img.c_angle;}
 function R_buildName(img){return `${getChar()}${getDressStr()}_FullBodyShot_${R_getAngle(img)}.png`;}
-function C_buildName(img,p,i){return useSeqNaming?`${getChar()}${getDressStr()}_${p.name}_${i!==undefined?i+1:1}.png`:`${getChar()}${getDressStr()}_${p.name}_${C_getAngle(img)}.png`;}
+function C_buildName(img,p,i){return useSeqNaming?`${i!==undefined?i+1:1}_${p.name}.png`:`${getChar()}${getDressStr()}_${p.name}_${C_getAngle(img)}.png`;}
 
 function updatePreviews(){
   const c=getChar(),d=getDressStr();
   $('s_previewR').textContent=`${c}${d}_FullBodyShot_[Angle].png`;
   const pn=C_profiles.filter(p=>p.enabled).map(p=>p.name).join('|')||'Profile';
-  $('s_previewC').textContent=`${c}${d}_{${pn}}_[Angle].png`;
+  $('s_previewC').textContent=useSeqNaming?`[1,2,3...]_{${pn}}.png`:`${c}${d}_{${pn}}_[Angle].png`;
 }
 
 $('s_charName').addEventListener('input',()=>{updatePreviews();R_refreshOutputs();C_refreshOutputs();});
