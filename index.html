@@ -148,7 +148,7 @@ body::after {
 .config-panel { background: var(--surface); border: 1px solid var(--rim); border-radius: 18px; padding: 28px; position: relative; overflow: hidden; transition: background .3s, border-color .3s, box-shadow .3s; }
 .config-panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(240,112,48,.35), transparent); }
 .config-panel::after { content: ''; position: absolute; inset: 0; background: linear-gradient(140deg, rgba(240,112,48,.04) 0%, transparent 55%); pointer-events: none; }
-.config-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; position: relative; z-index: 1; }
+.config-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 18px; position: relative; z-index: 1; }
 
 .field { display: flex; flex-direction: column; gap: 7px; }
 .field-label { font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
@@ -462,6 +462,7 @@ body::after {
       <div class="field"><label class="field-label">Character Name <span class="req">*</span></label><input id="s_charName" class="field-input" type="text" placeholder="auto-detected" autocomplete="off" spellcheck="false"/><div class="field-hint">Auto-extracted from filenames</div></div>
       <div class="field"><label class="field-label">Dress / Outfit ID</label><input id="s_dressNum" class="field-input" type="text" placeholder="optional" autocomplete="off" spellcheck="false"/><div class="field-hint">e.g. D1, D2 — leave blank for datasets</div></div>
       <div class="field" style="justify-content:center"><div class="toggle-row"><div class="mini-toggle on" id="dressToggle" onclick="toggleDress()"></div><span class="toggle-label" id="dressToggleLabel">Include dress in filenames</span></div><div class="field-hint" style="margin-top:8px">Turn off for datasets without outfit variants</div></div>
+      <div class="field" style="justify-content:center"><div class="toggle-row"><div class="mini-toggle" id="seqToggle" onclick="toggleSeq()"></div><span class="toggle-label" id="seqToggleLabel">Sequential Naming</span></div><div class="field-hint" style="margin-top:8px">Use 1, 2, 3 instead of angles</div></div>
       <div class="preview-row"><span class="preview-lbl">Renamer →</span><span class="preview-text" id="s_previewR"></span></div>
       <div class="preview-row"><span class="preview-lbl">Crop →</span><span class="preview-text" id="s_previewC"></span></div>
     </div></div>
@@ -553,7 +554,7 @@ const C_ANGLES={'Full Body':['FrontAngle','BackAngle','FrontThreeQuarterLeftAngl
 /* ═══════════════════════════════════════
    SHARED STATE
    ═══════════════════════════════════════ */
-let activeTab='renamer', includeDress=true, isDark=true;
+let activeTab='renamer', includeDress=true, isDark=true, useSeqNaming=false;
 let S_images=[];
 let C_pid=0;
 let C_profiles=[
@@ -709,7 +710,7 @@ function getDressStr(){
 function R_getAngle(img){return img.r_angle==='__custom__'?(img.r_customAngle||'CustomAngle'):img.r_angle;}
 function C_getAngle(img){return img.c_angle==='__custom__'?(img.c_customAngle||'CustomAngle'):img.c_angle;}
 function R_buildName(img){return `${getChar()}${getDressStr()}_FullBodyShot_${R_getAngle(img)}.png`;}
-function C_buildName(img,p){return `${getChar()}${getDressStr()}_${p.name}_${C_getAngle(img)}.png`;}
+function C_buildName(img,p,i){return useSeqNaming?`${getChar()}${getDressStr()}_${p.name}_${i!==undefined?i+1:1}.png`:`${getChar()}${getDressStr()}_${p.name}_${C_getAngle(img)}.png`;}
 
 function updatePreviews(){
   const c=getChar(),d=getDressStr();
@@ -735,6 +736,12 @@ function toggleDress(){
   $('dressToggle').classList.toggle('on',includeDress);
   $('dressToggleLabel').textContent=includeDress?'Include dress in filenames':'Dress excluded from filenames';
   updatePreviews();R_refreshOutputs();C_refreshOutputs();
+}
+function toggleSeq(){
+  useSeqNaming=!useSeqNaming;
+  $('seqToggle').classList.toggle('on',useSeqNaming);
+  $('seqToggleLabel').textContent=useSeqNaming?'Sequential Naming (On)':'Sequential Naming';
+  updatePreviews();C_refreshOutputs();
 }
 function switchTab(t){
   activeTab=t;
@@ -1067,7 +1074,7 @@ function C_buildCard(i){
   let opts='';for(const[g,as]of Object.entries(C_ANGLES)){opts+=`<optgroup label="${g}">`;for(const a of as){opts+=`<option value="${a}"${a===img.c_angle?' selected':''}>${a==='__custom__'?'✎ Custom':a}</option>`;}opts+='</optgroup>';}
   const ep=C_profiles.filter(p=>p.enabled);
   let prevH='';ep.forEach(p=>{const s=C_previewStyle(img,p,80);prevH+=`<div class="crop-preview-item"><div class="crop-preview-thumb" style="border-color:${p.color};${s.backgroundImage?`background-image:${s.backgroundImage};background-size:${s.backgroundSize};background-position:${s.backgroundPosition};`:''}background-repeat:no-repeat"></div><span class="crop-preview-thumb-label" style="color:${p.color}">${p.name}</span></div>`;});
-  let outH='';ep.forEach(p=>{outH+=`<div class="card-out-row"><span class="card-out" style="color:${p.color}">${C_buildName(img,p)}</span><button class="icon-btn dl sm" onclick="event.stopPropagation();C_dlCrop(${i},'${p.id}')">⬇</button></div>`;});
+  let outH='';ep.forEach(p=>{outH+=`<div class="card-out-row"><span class="card-out" style="color:${p.color}">${C_buildName(img,p,i)}</span><button class="icon-btn dl sm" onclick="event.stopPropagation();C_dlCrop(${i},'${p.id}')">⬇</button></div>`;});
   card.innerHTML=`<div class="card-chrome"><span class="card-idx">#${String(i+1).padStart(2,'0')}</span><span class="conf-tag ${cl[cc]}" id="c_ct_${i}">${lb[cc]}</span><div class="card-chrome-actions"><button class="icon-btn del" onclick="S_removeImage(${i})">✕</button></div></div>
   <div class="card-thumb" onclick="openLightbox('${img.objectURL}','${img.originalName} — ${img.natW}×${img.natH}')"><img src="${img.objectURL}" alt="" loading="lazy"/><span class="card-dims">${img.natW}×${img.natH}</span><button class="card-thumb-expand" onclick="event.stopPropagation();openLightbox('${img.objectURL}','${img.originalName}')">⤢</button></div>
   <div class="card-body"><div class="crop-preview-strip" id="c_strip_${i}">${prevH}</div><button class="btn-tweak" onclick="C_openTweak(${i})">🎯 Tweak</button><div class="card-fname">${img.originalName}</div><div><div class="angle-lbl">Angle</div><select class="angle-select" onchange="C_setAngle(${i},this.value)">${opts}</select><div class="custom-angle-wrap ${isCust?'visible':''}" id="c_cw_${i}"><input type="text" class="custom-angle-input" id="c_ci_${i}" placeholder="e.g. TopView" value="${img.c_customAngle||''}" oninput="C_setCustom(${i},this.value)" spellcheck="false"/><div class="custom-hint">PascalCase</div></div></div><div class="card-outputs" id="c_outs_${i}">${outH}</div></div>`;
@@ -1083,7 +1090,7 @@ function C_rebuildGrid(){
 function C_refreshOutputs(){
   S_images.forEach((img,i)=>{
     const el=$(`c_outs_${i}`);if(!el)return;
-    el.innerHTML=C_profiles.filter(p=>p.enabled).map(p=>`<div class="card-out-row"><span class="card-out" style="color:${p.color}">${C_buildName(img,p)}</span><button class="icon-btn dl sm" onclick="event.stopPropagation();C_dlCrop(${i},'${p.id}')">⬇</button></div>`).join('');
+    el.innerHTML=C_profiles.filter(p=>p.enabled).map(p=>`<div class="card-out-row"><span class="card-out" style="color:${p.color}">${C_buildName(img,p,i)}</span><button class="icon-btn dl sm" onclick="event.stopPropagation();C_dlCrop(${i},'${p.id}')">⬇</button></div>`).join('');
   });
   S_updateUI();
 }
@@ -1282,7 +1289,7 @@ async function C_dlCrop(i,pid){
     }
     targetCv.toBlob(blob=>{
       const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');a.href=url;a.download=C_buildName(img,p);
+      const a=document.createElement('a');a.href=url;a.download=C_buildName(img,p,i);
       document.body.appendChild(a);a.click();document.body.removeChild(a);
       setTimeout(()=>URL.revokeObjectURL(url),3000);
       nativeCv.width=1;targetCv.width=1;
@@ -1304,12 +1311,27 @@ async function C_export(){
   try{
     const zip=new JSZip(),folder=zip.folder(`${getChar()}${getDressStr()}_dataset`);let done=0;
     const pica=window.pica();
-    for(const img of valid){
+    const usedNames = new Set();
+    const getUniqueName = (base) => {
+      let finalName = base;
+      let counter = 1;
+      const extMatch = base.match(/\.([^.]+)$/);
+      const ext = extMatch ? `.${extMatch[1]}` : '';
+      const nameWithoutExt = extMatch ? base.slice(0, -ext.length) : base;
+      while (usedNames.has(finalName)) {
+        finalName = `${nameWithoutExt} (${counter})${ext}`;
+        counter++;
+      }
+      usedNames.add(finalName);
+      return finalName;
+    };
+    for(let i=0; i<valid.length; i++){
+      const img = valid[i];
       sub.textContent=`Loading ${img.originalName}…`;
       const src=await loadImg(img.objectURL);
       for(const p of ep){
         const crop=C_getCrop(img,p);
-        const name=C_buildName(img,p);
+        const name=getUniqueName(C_buildName(img,p,i));
         sub.textContent=name;bar.style.width=`${(done/total)*75}%`;
         let oW,oH;
         if(tr===-1){oW=img.natW;oH=img.natH;}
